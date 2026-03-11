@@ -28,26 +28,34 @@ const Landing = () => {
           <div className="mt-7 space-y-3 text-base text-white/90 sm:text-xl">
             <p className="flex items-center justify-center gap-3">
               <span className="text-[#9DFFAB]">&#10004;</span>
-              <span>24/7 Live Monitoring</span>
+              <span>AI-Based Video Search</span>
             </p>
             <p className="flex items-center justify-center gap-3">
               <span className="text-[#9DFFAB]">&#10004;</span>
-              <span>Cloud Storage Support</span>
+              <span>Post-Event Video Analysis</span>
             </p>
             <p className="flex items-center justify-center gap-3">
               <span className="text-[#9DFFAB]">&#10004;</span>
-              <span>High Resolution Cameras</span>
+              <span>Smart Event Detection</span>
             </p>
             <p className="flex items-center justify-center gap-3">
               <span className="text-[#9DFFAB]">&#10004;</span>
-              <span>Remote Access & Alerts</span>
+              <span>Multimodal Video Retrieval</span>
+            </p>
+              <p className="flex items-center justify-center gap-3">
+              <span className="text-[#9DFFAB]">&#10004;</span>
+              <span>Fast CCTV Footage Search</span>
+            </p>
+              <p className="flex items-center justify-center gap-3">
+              <span className="text-[#9DFFAB]">&#10004;</span>
+              <span>Secure Video Storage</span>
             </p>
           </div>
         </section>
       </main>
 
       <footer className="mt-14 bg-[#1B211A]/85 px-4 py-4 text-center text-sm text-white backdrop-blur-sm">
-        © 2026 CCTV Secure. All Rights Reserved.
+        ï¿½ 2026 CCTV Secure. All Rights Reserved.
       </footer>
     </div>
   );
