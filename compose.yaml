@@ -17,6 +17,11 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - ML_SERVICE_URL=http://ml-service:8000
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      - ml-service
+      - qdrant
     restart: unless-stopped
 
   front-end:
@@ -33,3 +38,23 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  qdrant_data:
