@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { apiRequest } from "../lib/api";
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -9,6 +11,8 @@ const Login = () => {
 
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
+  const [serverError, setServerError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -32,14 +36,34 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (validate()) {
-      setSuccess("Login Successful!");
-      setErrors({});
-    } else {
+    if (!validate()) {
       setSuccess("");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setServerError("");
+
+    try {
+      const data = await apiRequest("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(formData),
+      });
+
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem("authUser", JSON.stringify(data.user));
+      setSuccess(data.message || "Login successful");
+      setErrors({});
+      setFormData({ email: "", password: "" });
+      navigate("/dashboard");
+    } catch (err) {
+      setServerError(err.message || "Login failed");
+      setSuccess("");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -113,14 +137,21 @@ const Login = () => {
 
           <button
             type="submit"
+            disabled={isSubmitting}
             className="mt-7 w-full rounded-2xl border border-[#7DDE86]/45 bg-gradient-to-r from-[#2B7D37] to-[#4BB85B] px-4 py-3 text-2xl font-semibold text-white shadow-[0_0_24px_rgba(98,255,152,0.35)] transition hover:brightness-110"
           >
-            Login
+            {isSubmitting ? "Logging in..." : "Login"}
           </button>
 
           {success && (
             <div className="mt-4 text-center text-lg font-semibold text-[#B7FFC1]">
               {success}
+            </div>
+          )}
+
+          {serverError && (
+            <div className="mt-4 text-center text-lg font-semibold text-red-300">
+              {serverError}
             </div>
           )}
 
@@ -140,5 +171,4 @@ const Login = () => {
 };
 
 export default Login;
-
 

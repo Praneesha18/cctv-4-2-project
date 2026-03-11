@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { apiRequest } from "../lib/api";
 
 const Registration = () => {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const isForgotMode = searchParams.get("mode") === "forgot";
 
@@ -16,6 +18,8 @@ const Registration = () => {
 
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
+  const [serverError, setServerError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -26,11 +30,25 @@ const Registration = () => {
 
   const validateRegister = () => {
     const newErrors = {};
+    const trimmedName = formData.name.trim();
+    const trimmedEmail = formData.email.trim();
+    const trimmedPhone = formData.phone.trim();
+    const trimmedPassword = formData.password.trim();
 
-    if (!formData.name.trim()) newErrors.name = "Name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    if (!formData.phone.trim()) newErrors.phone = "Phone is required";
-    if (!formData.password.trim()) newErrors.password = "Password is required";
+    if (!trimmedName) newErrors.name = "Name is required";
+    if (!trimmedEmail) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(trimmedEmail)) {
+      newErrors.email = "Enter a valid email";
+    }
+    if (trimmedPhone && !/^[0-9+\-\s()]{7,}$/.test(trimmedPhone)) {
+      newErrors.phone = "Enter a valid phone number";
+    }
+    if (!trimmedPassword) {
+      newErrors.password = "Password is required";
+    } else if (trimmedPassword.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -45,11 +63,31 @@ const Registration = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegisterSubmit = (e) => {
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
 
-    if (validateRegister()) {
-      setSuccess("Registration Completed Successfully!");
+    if (!validateRegister()) {
+      setSuccess("");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setServerError("");
+
+    try {
+      const payload = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        password: formData.password.trim(),
+      };
+
+      const data = await apiRequest("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      setSuccess(data.message || "Registration completed successfully");
       setFormData({
         name: "",
         email: "",
@@ -57,8 +95,12 @@ const Registration = () => {
         password: "",
       });
       setErrors({});
-    } else {
+      window.setTimeout(() => navigate("/login"), 800);
+    } catch (err) {
+      setServerError(err.message || "Registration failed");
       setSuccess("");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -77,12 +119,14 @@ const Registration = () => {
   const switchToForgot = () => {
     setErrors({});
     setSuccess("");
+    setServerError("");
     setSearchParams({ mode: "forgot" });
   };
 
   const switchToRegister = () => {
     setErrors({});
     setSuccess("");
+    setServerError("");
     setSearchParams({});
   };
 
@@ -191,17 +235,22 @@ const Registration = () => {
 
           <button
             type="submit"
+            disabled={isSubmitting && !isForgotMode}
             className={`mt-7 w-full rounded-2xl border px-4 py-3 text-2xl font-semibold text-white transition ${
               isForgotMode
                 ? "border-[#67C873]/40 bg-gradient-to-r from-[#23672D] to-[#379446] shadow-[0_0_14px_rgba(82,196,108,0.22)] hover:brightness-105"
                 : "border-[#7DDE86]/45 bg-gradient-to-r from-[#2B7D37] to-[#4BB85B] shadow-[0_0_24px_rgba(98,255,152,0.35)] hover:brightness-110"
             }`}
           >
-            {isForgotMode ? "Send Reset Link" : "Register"}
+            {isForgotMode ? "Send Reset Link" : isSubmitting ? "Registering..." : "Register"}
           </button>
 
           {success && (
             <div className="mt-4 text-center text-sm font-semibold text-[#B7FFC1]">{success}</div>
+          )}
+
+          {serverError && (
+            <div className="mt-4 text-center text-sm font-semibold text-red-300">{serverError}</div>
           )}
 
           <div className="mt-8 border-t border-[#7DDE86]/20 pt-6 text-center text-lg text-white/90">
@@ -246,5 +295,3 @@ const Registration = () => {
 };
 
 export default Registration;
-
-

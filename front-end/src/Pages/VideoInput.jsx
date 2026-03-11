@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { API_BASE_URL } from "../lib/api";
 
 const VideoInput = () => {
   const [videoFile, setVideoFile] = useState(null);
@@ -6,8 +7,6 @@ const VideoInput = () => {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0] || null;
@@ -34,7 +33,7 @@ const VideoInput = () => {
       formData.append("video", videoFile);
       formData.append("notes", notes);
 
-      const response = await fetch(`${backendUrl}/api/video/ingest`, {
+      const response = await fetch(`${API_BASE_URL}/api/video/ingest`, {
         method: "POST",
         body: formData,
       });
