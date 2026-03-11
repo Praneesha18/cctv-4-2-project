@@ -14,14 +14,19 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    env_file:
+      - ./backend/.env
     environment:
       - NODE_ENV=production
       - PORT=3000
+
       - ML_SERVICE_URL=http://ml-service:8000
       - QDRANT_URL=http://qdrant:6333
     depends_on:
       - ml-service
       - qdrant
+
+      - FRONTEND_URL=http://localhost:5174
     restart: unless-stopped
 
   front-end:
