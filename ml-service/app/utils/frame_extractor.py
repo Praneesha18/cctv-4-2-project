@@ -2,7 +2,7 @@ import os
 import cv2
 
 
-def extract_frames(video_path, fps=1):
+def extract_frames(video_path, fps=2):
     if not os.path.exists(video_path):
         raise FileNotFoundError(f"Video file not found: {video_path}")
 
@@ -23,7 +23,13 @@ def extract_frames(video_path, fps=1):
         if not ret:
             break
         if count % interval == 0:
-            frames.append(frame)
+            frames.append(
+                {
+                    "frame": frame,
+                    "frame_index": count,
+                    "timestamp_seconds": count / video_fps if video_fps > 0 else len(frames) / fps,
+                }
+            )
         count += 1
 
     cap.release()

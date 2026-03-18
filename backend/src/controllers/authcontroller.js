@@ -1,6 +1,6 @@
-const userModel = require("../models/usermodel");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken"); 
+const jwt = require("jsonwebtoken");
+const userModel = require("../models/usermodel");
 
 const authController = {
   register: async (req, res) => {
@@ -26,13 +26,21 @@ const authController = {
 
       const existingUser = await userModel.findOne({ email });
       if (existingUser) {
-        return res.status(400).json({ success: false, message: "Email already in use" });
+        return res.status(400).json({
+          success: false,
+          message: "Email already in use",
+        });
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
-      const newUser = new userModel({ name, email, phone, password: hashedPassword });
-      await newUser.save();
-      res.status(201).json({
+      const newUser = await userModel.create({
+        name,
+        email,
+        phone,
+        password: hashedPassword,
+      });
+
+      return res.status(201).json({
         success: true,
         message: "User registered successfully",
         user: {
@@ -42,46 +50,89 @@ const authController = {
           phone: newUser.phone,
         },
       });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        message: "Server error",
+        error: err.message,
+      });
     }
-    catch(err){
-        res.status(500).json({ success: false, message: "Server error", error: err.message });
-    }
+  },
 
-},
-login: async (req, res) => {
+  login: async (req, res) => {
     try {
-        const { email, password } = req.body;
-        if(!email || !password){
-            return res.status(400).json({ success: false, message: "Email and password are required" });
-        }else{
-            const user = await userModel.findOne({email})
-            if(!user){
-                return res.status(400).json({ success: false, message: "Invalid email or password" });
-            }else{
-                const isMatch = await bcrypt.compare(password, user.password);  
-                if(!isMatch){
-                    return res.status(400).json({ success: false, message: "Invalid email or password" });
-                }else{
-                    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-                    res.status(200).json({
-                      success: true,
-                      message: "Login successful",
-                      token,
-                      user: {
-                        id: user._id,
-                        name: user.name,
-                        email: user.email,
-                        phone: user.phone,
-                      },
-                    });
-                }
-        }
-    }
-}
-catch(err){
-    res.status(500).json({ success: false, message: "Server error", error: err.message });  
+      const email = req.body.email?.trim().toLowerCase();
+      const password = req.body.password?.trim();
 
-}
-}
-}
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          message: "Email and password are required",
+        });
+      }
+
+      const user = await userModel.findOne({ email });
+      if (!user) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email or password",
+        });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email or password",
+        });
+      }
+
+      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Login successful",
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+        },
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        message: "Server error",
+        error: err.message,
+      });
+    }
+  },
+
+  me: async (req, res) => {
+    try {
+      const user = await userModel.findById(req.user.userId).select("-password");
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        user,
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        message: "Server error",
+        error: err.message,
+      });
+    }
+  },
+};
+
 module.exports = authController;

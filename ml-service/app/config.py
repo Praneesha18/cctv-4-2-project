@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     app_host: str = "0.0.0.0"
     app_port: int = 8000
     clip_model_name: str = "ViT-B/32"
+    clip_cache_dir: str = "/tmp/clip-cache"
 
     model_config = SettingsConfigDict(
         env_file=".env",

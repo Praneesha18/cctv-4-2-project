@@ -1,0 +1,75 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - ./backend/.env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      MONGO_URI: mongodb://mongo:27017/cctv_app
+      FRONTEND_URL: http://localhost
+      ML_SERVICE_URL: http://ml-service:8000
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_COLLECTION: video_embeddings
+      SHARED_UPLOAD_DIR: /shared/uploads
+    depends_on:
+      - mongo
+      - ml-service
+      - qdrant
+    volumes:
+      - shared_uploads:/shared/uploads
+    restart: unless-stopped
+
+  front-end:
+    build:
+      context: ./front-end
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_BACKEND_URL: ""
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2.8-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    depends_on:
+      - front-end
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    volumes:
+      - shared_uploads:/shared/uploads
+    restart: unless-stopped
+
+  mongo:
+    image: mongo:7
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    volumes:
+      - qdrant_data:/qdrant/storage
+    restart: unless-stopped
+
+volumes:
+  caddy_config:
+  caddy_data:
+  mongo_data:
+  qdrant_data:
+  shared_uploads:

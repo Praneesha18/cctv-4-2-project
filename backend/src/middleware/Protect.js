@@ -3,12 +3,13 @@ const jwt = require("jsonwebtoken");
 const protect = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
+    const queryToken = typeof req.query.token === "string" ? req.query.token : null;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if ((!authHeader || !authHeader.startsWith("Bearer ")) && !queryToken) {
       return res.status(401).json({ success: false, message: "Unauthorized: token missing" });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = queryToken || authHeader.split(" ")[1];
 
     if (!token) {
       return res.status(401).json({ success: false, message: "Unauthorized: token missing" });

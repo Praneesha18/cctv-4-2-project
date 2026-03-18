@@ -134,13 +134,13 @@ const Registration = () => {
     <div className="min-h-screen page-background">
       <div className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
         <form
-          className="w-full max-w-md rounded-[28px] border border-[#7DDE86]/30 bg-[#08130D]/65 p-8 text-white shadow-[0_0_50px_rgba(73,255,133,0.16)] backdrop-blur-md"
+          className="surface-card w-full max-w-md rounded-[28px] p-8 text-white"
           onSubmit={isForgotMode ? handleForgotSubmit : handleRegisterSubmit}
         >
-          <h1 className="text-center text-xl font-bold tracking-wide text-[#7DDE86] sm:text-2xl">
+          <h1 className="display-font text-center text-xl font-bold tracking-wide text-[#7DDE86] sm:text-2xl">
             Post-Event Video Analysis and Retrieval Using Multimodal AI
           </h1>
-          <h2 className="mt-1 text-center text-3xl font-semibold text-white/95">
+          <h2 className="display-font mt-1 text-center text-3xl font-semibold text-white/95">
             {isForgotMode ? "Forgot Password" : "Create Account"}
           </h2>
           <div className="mx-auto mt-5 h-[2px] w-56 bg-gradient-to-r from-transparent via-[#7DDE86] to-transparent" />
@@ -157,7 +157,7 @@ const Registration = () => {
                 placeholder="Enter your email"
                 value={forgotEmail}
                 onChange={(e) => setForgotEmail(e.target.value)}
-                className="w-full rounded-2xl border border-[#7DDE86]/30 bg-[#0B1911]/70 px-5 py-3 text-base text-white outline-none placeholder:text-white/40 focus:border-[#7DDE86] focus:ring-2 focus:ring-[#7DDE86]/35"
+                className="app-input"
               />
               {errors.forgotEmail && (
                 <div className="mt-2 text-sm font-medium text-red-300">{errors.forgotEmail}</div>
@@ -176,7 +176,7 @@ const Registration = () => {
                   placeholder="Enter your full name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full rounded-2xl border border-[#7DDE86]/30 bg-[#0B1911]/70 px-5 py-3 text-base text-white outline-none placeholder:text-white/40 focus:border-[#7DDE86] focus:ring-2 focus:ring-[#7DDE86]/35"
+                  className="app-input"
                 />
                 {errors.name && <div className="mt-2 text-sm font-medium text-red-300">{errors.name}</div>}
               </div>
@@ -192,7 +192,7 @@ const Registration = () => {
                   placeholder="Enter your email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full rounded-2xl border border-[#7DDE86]/30 bg-[#0B1911]/70 px-5 py-3 text-base text-white outline-none placeholder:text-white/40 focus:border-[#7DDE86] focus:ring-2 focus:ring-[#7DDE86]/35"
+                  className="app-input"
                 />
                 {errors.email && <div className="mt-2 text-sm font-medium text-red-300">{errors.email}</div>}
               </div>
@@ -208,7 +208,7 @@ const Registration = () => {
                   placeholder="Enter your phone number"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full rounded-2xl border border-[#7DDE86]/30 bg-[#0B1911]/70 px-5 py-3 text-base text-white outline-none placeholder:text-white/40 focus:border-[#7DDE86] focus:ring-2 focus:ring-[#7DDE86]/35"
+                  className="app-input"
                 />
                 {errors.phone && <div className="mt-2 text-sm font-medium text-red-300">{errors.phone}</div>}
               </div>
@@ -224,7 +224,7 @@ const Registration = () => {
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="w-full rounded-2xl border border-[#7DDE86]/30 bg-[#0B1911]/70 px-5 py-3 text-base text-white outline-none placeholder:text-white/40 focus:border-[#7DDE86] focus:ring-2 focus:ring-[#7DDE86]/35"
+                  className="app-input"
                 />
                 {errors.password && (
                   <div className="mt-2 text-sm font-medium text-red-300">{errors.password}</div>
@@ -236,10 +236,10 @@ const Registration = () => {
           <button
             type="submit"
             disabled={isSubmitting && !isForgotMode}
-            className={`mt-7 w-full rounded-2xl border px-4 py-3 text-2xl font-semibold text-white transition ${
+            className={`app-button mt-7 w-full text-2xl ${
               isForgotMode
-                ? "border-[#67C873]/40 bg-gradient-to-r from-[#23672D] to-[#379446] shadow-[0_0_14px_rgba(82,196,108,0.22)] hover:brightness-105"
-                : "border-[#7DDE86]/45 bg-gradient-to-r from-[#2B7D37] to-[#4BB85B] shadow-[0_0_24px_rgba(98,255,152,0.35)] hover:brightness-110"
+                ? "app-button-secondary"
+                : "app-button-primary"
             }`}
           >
             {isForgotMode ? "Send Reset Link" : isSubmitting ? "Registering..." : "Register"}

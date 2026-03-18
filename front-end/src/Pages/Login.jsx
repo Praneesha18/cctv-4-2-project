@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiRequest } from "../lib/api";
+import { setAuthSession } from "../lib/auth";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -53,8 +54,7 @@ const Login = () => {
         body: JSON.stringify(formData),
       });
 
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("authUser", JSON.stringify(data.user));
+      setAuthSession(data.token, data.user);
       setSuccess(data.message || "Login successful");
       setErrors({});
       setFormData({ email: "", password: "" });
@@ -71,13 +71,13 @@ const Login = () => {
     <div className="min-h-screen page-background">
       <div className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
         <form
-          className="w-full max-w-md rounded-[28px] border border-[#7DDE86]/30 bg-[#08130D]/65 p-8 text-white shadow-[0_0_50px_rgba(73,255,133,0.16)] backdrop-blur-md"
+          className="surface-card w-full max-w-md rounded-[28px] p-8 text-white"
           onSubmit={handleSubmit}
         >
-          <h1 className="text-center text-xl font-bold tracking-wide text-[#7DDE86] sm:text-2xl">
+          <h1 className="display-font text-center text-xl font-bold tracking-wide text-[#7DDE86] sm:text-2xl">
             Post-Event Video Analysis and Retrieval Using Multimodal AI
           </h1>
-          <h2 className="mt-1 text-center text-3xl font-semibold text-white/95">
+          <h2 className="display-font mt-1 text-center text-3xl font-semibold text-white/95">
             Login
           </h2>
           <div className="mx-auto mt-5 h-[2px] w-56 bg-gradient-to-r from-transparent via-[#7DDE86] to-transparent" />
@@ -97,7 +97,7 @@ const Login = () => {
                 placeholder="Enter your email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full rounded-2xl border border-[#7DDE86]/30 bg-[#0B1911]/70 px-5 py-3 text-lg text-white outline-none placeholder:text-white/40 focus:border-[#7DDE86] focus:ring-2 focus:ring-[#7DDE86]/35"
+                className="app-input text-lg"
               />
               {errors.email && (
                 <div className="mt-2 text-lg font-medium text-red-300">{errors.email}</div>
@@ -118,7 +118,7 @@ const Login = () => {
                 placeholder="Enter your password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full rounded-2xl border border-[#7DDE86]/30 bg-[#0B1911]/70 px-5 py-3 text-lg text-white outline-none placeholder:text-white/40 focus:border-[#7DDE86] focus:ring-2 focus:ring-[#7DDE86]/35"
+                className="app-input text-lg"
               />
               {errors.password && (
                 <div className="mt-2 text-lg font-medium text-red-300">{errors.password}</div>
@@ -138,7 +138,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-7 w-full rounded-2xl border border-[#7DDE86]/45 bg-gradient-to-r from-[#2B7D37] to-[#4BB85B] px-4 py-3 text-2xl font-semibold text-white shadow-[0_0_24px_rgba(98,255,152,0.35)] transition hover:brightness-110"
+            className="app-button app-button-primary mt-7 w-full text-2xl disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSubmitting ? "Logging in..." : "Login"}
           </button>
@@ -171,4 +171,3 @@ const Login = () => {
 };
 
 export default Login;
-
