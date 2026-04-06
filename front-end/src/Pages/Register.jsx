@@ -15,17 +15,24 @@ const Registration = () => {
   });
 
   const [forgotEmail, setForgotEmail] = useState("");
-
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
   const [serverError, setServerError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
+    setServerError("");
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+
+    if (errors[e.target.name]) {
+      setErrors((currentErrors) => ({
+        ...currentErrors,
+        [e.target.name]: "",
+      }));
+    }
   };
 
   const validateRegister = () => {
@@ -73,6 +80,10 @@ const Registration = () => {
 
     setIsSubmitting(true);
     setServerError("");
+    setErrors((currentErrors) => ({
+      ...currentErrors,
+      email: "",
+    }));
 
     try {
       const payload = {
@@ -97,7 +108,19 @@ const Registration = () => {
       setErrors({});
       window.setTimeout(() => navigate("/login"), 800);
     } catch (err) {
-      setServerError(err.message || "Registration failed");
+      const validation = err.data?.validation;
+      if (err.status === 400 && validation?.email && validation?.isValid === false) {
+        setErrors((currentErrors) => ({
+          ...currentErrors,
+          email:
+            validation.suggestedCorrection
+              ? `Invalid email address. Did you mean ${validation.suggestedCorrection}?`
+              : "Invalid email address",
+        }));
+        setServerError("");
+      } else {
+        setServerError(err.message || "Registration failed");
+      }
       setSuccess("");
     } finally {
       setIsSubmitting(false);
@@ -131,164 +154,202 @@ const Registration = () => {
   };
 
   return (
-    <div className="min-h-screen page-background">
-      <div className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
-        <form
-          className="surface-card w-full max-w-md rounded-[28px] p-8 text-white"
-          onSubmit={isForgotMode ? handleForgotSubmit : handleRegisterSubmit}
-        >
-          <h1 className="display-font text-center text-xl font-bold tracking-wide text-[#7DDE86] sm:text-2xl">
-            Post-Event Video Analysis and Retrieval Using Multimodal AI
-          </h1>
-          <h2 className="display-font mt-1 text-center text-3xl font-semibold text-white/95">
-            {isForgotMode ? "Forgot Password" : "Create Account"}
-          </h2>
-          <div className="mx-auto mt-5 h-[2px] w-56 bg-gradient-to-r from-transparent via-[#7DDE86] to-transparent" />
+    <div className="page-background h-[calc(100vh-72px)] overflow-hidden">
+      <div className="mx-auto flex h-full max-w-7xl items-center px-4 py-6 sm:px-6 lg:px-8">
+        <div className="auth-shell w-full">
+          <section className="auth-shell-card auth-shell-card-no-orb px-2 py-4 sm:px-4 lg:px-6">
+            <p className="eyebrow">{isForgotMode ? "Account Recovery" : "Create Account"}</p>
+            <h1 className="display-font mt-5 max-w-3xl text-4xl font-semibold leading-tight text-[#F7F4EB] sm:text-5xl">
+              {isForgotMode
+                ? "Get back into your account and continue where you left off."
+                : "Create your account and start using the workspace easily."}
+            </h1>
+            <p className="body-copy mt-5 max-w-2xl text-base sm:text-lg">
+              {isForgotMode
+                ? "Enter the email linked to your account and continue your workflow without extra steps."
+                : "Set up your account to upload footage, review results, and keep everything organized in one place."}
+            </p>
 
-          {isForgotMode ? (
-            <div className="mt-8">
-              <label htmlFor="forgotEmail" className="mb-2 block text-base font-medium text-[#DFFFE2]">
-                Email
-              </label>
-              <input
-                id="forgotEmail"
-                type="email"
-                name="forgotEmail"
-                placeholder="Enter your email"
-                value={forgotEmail}
-                onChange={(e) => setForgotEmail(e.target.value)}
-                className="app-input"
-              />
-              {errors.forgotEmail && (
-                <div className="mt-2 text-sm font-medium text-red-300">{errors.forgotEmail}</div>
-              )}
-            </div>
-          ) : (
-            <div className="mt-8 space-y-5">
-              <div>
-                <label htmlFor="name" className="mb-2 block text-base font-medium text-[#DFFFE2]">
-                  Full Name
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  name="name"
-                  placeholder="Enter your full name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="app-input"
-                />
-                {errors.name && <div className="mt-2 text-sm font-medium text-red-300">{errors.name}</div>}
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="panel-card rounded-[16px] p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/44">
+                  Get Started
+                </p>
+                <p className="display-font mt-3 text-2xl font-semibold text-[#F7F4EB]">
+                  Create your account and begin with a clean setup 
+                </p>
               </div>
+              <div className="rounded-[16px] bg-secondary p-5 text-[#F8F3E9]">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[rgba(248,243,233,0.56)]">
+                  Simple Access
+                </p>
+                <p className="display-font mt-3 text-2xl font-semibold">
+                  Sign up once and keep your work in one place smoothly and efficiently
+                </p>
+              </div>
+            </div>
+          </section>
 
+          <form
+            className="rounded-[22px] bg-deep p-7 text-white sm:p-8"
+            onSubmit={isForgotMode ? handleForgotSubmit : handleRegisterSubmit}
+          >
+            {isForgotMode ? (
               <div>
-                <label htmlFor="email" className="mb-2 block text-base font-medium text-[#DFFFE2]">
+                <label
+                  htmlFor="forgotEmail"
+                  className="mb-2 block text-sm font-semibold uppercase tracking-[0.16em] text-white/58"
+                >
                   Email
                 </label>
                 <input
-                  id="email"
+                  id="forgotEmail"
                   type="email"
-                  name="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={handleChange}
+                  name="forgotEmail"
+                  placeholder="name@domain.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
                   className="app-input"
                 />
-                {errors.email && <div className="mt-2 text-sm font-medium text-red-300">{errors.email}</div>}
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="mb-2 block text-base font-medium text-[#DFFFE2]">
-                  Phone Number
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  name="phone"
-                  placeholder="Enter your phone number"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="app-input"
-                />
-                {errors.phone && <div className="mt-2 text-sm font-medium text-red-300">{errors.phone}</div>}
-              </div>
-
-              <div>
-                <label htmlFor="password" className="mb-2 block text-base font-medium text-[#DFFFE2]">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  name="password"
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="app-input"
-                />
-                {errors.password && (
-                  <div className="mt-2 text-sm font-medium text-red-300">{errors.password}</div>
+                {errors.forgotEmail && (
+                  <div className="mt-2 text-sm font-medium text-red-300">{errors.forgotEmail}</div>
                 )}
               </div>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isSubmitting && !isForgotMode}
-            className={`app-button mt-7 w-full text-2xl ${
-              isForgotMode
-                ? "app-button-secondary"
-                : "app-button-primary"
-            }`}
-          >
-            {isForgotMode ? "Send Reset Link" : isSubmitting ? "Registering..." : "Register"}
-          </button>
-
-          {success && (
-            <div className="mt-4 text-center text-sm font-semibold text-[#B7FFC1]">{success}</div>
-          )}
-
-          {serverError && (
-            <div className="mt-4 text-center text-sm font-semibold text-red-300">{serverError}</div>
-          )}
-
-          <div className="mt-8 border-t border-[#7DDE86]/20 pt-6 text-center text-lg text-white/90">
-            {isForgotMode ? (
-              <>
-                Need an account?{" "}
-                <button
-                  type="button"
-                  onClick={switchToRegister}
-                  className="font-semibold text-[#9DFFAB] underline underline-offset-4 transition hover:text-[#C7FFCF]"
-                >
-                  Register
-                </button>
-              </>
             ) : (
-              <>
-                Forgot your password?{" "}
-                <button
-                  type="button"
-                  onClick={switchToForgot}
-                  className="font-semibold text-[#9DFFAB] underline underline-offset-4 transition hover:text-[#C7FFCF]"
-                >
-                  Reset here
-                </button>
-              </>
-            )}
-          </div>
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="mb-2 block text-sm font-semibold uppercase tracking-[0.16em] text-white/58"
+                  >
+                    Full Name
+                  </label>
+                  <input
+                    id="name"
+                    type="text"
+                    name="name"
+                    placeholder="Enter your full name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="app-input"
+                  />
+                  {errors.name && <div className="mt-2 text-sm font-medium text-red-300">{errors.name}</div>}
+                </div>
 
-          <div className="mt-4 text-center text-lg text-white/90">
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              className="font-semibold text-[#9DFFAB] underline underline-offset-4 transition hover:text-[#C7FFCF]"
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="mb-2 block text-sm font-semibold uppercase tracking-[0.16em] text-white/58"
+                  >
+                    Email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    name="email"
+                    placeholder="name@domain.com"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="app-input"
+                  />
+                  {errors.email && <div className="mt-2 text-sm font-medium text-red-300">{errors.email}</div>}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="phone"
+                    className="mb-2 block text-sm font-semibold uppercase tracking-[0.16em] text-white/58"
+                  >
+                    Phone Number
+                  </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    name="phone"
+                    placeholder="Enter your phone number"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="app-input"
+                  />
+                  {errors.phone && <div className="mt-2 text-sm font-medium text-red-300">{errors.phone}</div>}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="mb-2 block text-sm font-semibold uppercase tracking-[0.16em] text-white/58"
+                  >
+                    Password
+                  </label>
+                  <input
+                    id="password"
+                    type="password"
+                    name="password"
+                    placeholder="Create a password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="app-input"
+                  />
+                  {errors.password && (
+                    <div className="mt-2 text-sm font-medium text-red-300">{errors.password}</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting && !isForgotMode}
+              className="app-button auth-submit-button mt-6 w-full"
             >
-              Login
-            </Link>
-          </div>
-        </form>
+              {isForgotMode ? "Send Reset Link" : isSubmitting ? "Registering..." : "Register"}
+            </button>
+
+            {success && (
+              <div className="mt-4 text-center text-sm font-semibold text-[#D9EBCF]">{success}</div>
+            )}
+
+            {serverError && (
+              <div className="mt-4 text-center text-sm font-semibold text-red-300">{serverError}</div>
+            )}
+
+            <div className="mt-6 pt-4 text-center text-sm text-white/72">
+              {isForgotMode ? (
+                <>
+                  Need an account?{" "}
+                  <button
+                    type="button"
+                    onClick={switchToRegister}
+                    className="font-semibold text-[#9DFFAB] underline underline-offset-4"
+                  >
+                    Register
+                  </button>
+                </>
+              ) : (
+                <>
+                  Forgot your password?{" "}
+                  <button
+                    type="button"
+                    onClick={switchToForgot}
+                    className="font-semibold text-[#9DFFAB] underline underline-offset-4"
+                  >
+                    Reset here
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div className="mt-3 text-center text-sm text-white/72">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="font-semibold text-[#9DFFAB] underline underline-offset-4"
+              >
+                Login
+              </Link>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

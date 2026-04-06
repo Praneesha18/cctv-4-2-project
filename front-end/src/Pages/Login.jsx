@@ -55,12 +55,12 @@ const Login = () => {
       });
 
       setAuthSession(data.token, data.user);
-      setSuccess(data.message || "Login successful");
+      setSuccess(data.message || "Welcome back!");
       setErrors({});
       setFormData({ email: "", password: "" });
       navigate("/dashboard");
     } catch (err) {
-      setServerError(err.message || "Login failed");
+      setServerError(err.message || "Unable to sign in. Please try again.");
       setSuccess("");
     } finally {
       setIsSubmitting(false);
@@ -68,103 +68,126 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen page-background">
-      <div className="mx-auto flex min-h-screen max-w-7xl items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
-        <form
-          className="surface-card w-full max-w-md rounded-[28px] p-8 text-white"
-          onSubmit={handleSubmit}
-        >
-          <h1 className="display-font text-center text-xl font-bold tracking-wide text-[#7DDE86] sm:text-2xl">
-            Post-Event Video Analysis and Retrieval Using Multimodal AI
-          </h1>
-          <h2 className="display-font mt-1 text-center text-3xl font-semibold text-white/95">
-            Login
-          </h2>
-          <div className="mx-auto mt-5 h-[2px] w-56 bg-gradient-to-r from-transparent via-[#7DDE86] to-transparent" />
+    <div className="page-background h-[calc(100vh-72px)] overflow-hidden">
+      <div className="mx-auto flex h-full max-w-7xl items-center px-4 py-6 sm:px-6 lg:px-8">
+        <div className="auth-shell w-full">
+          <section className="auth-shell-card auth-shell-card-no-orb flex h-full flex-col justify-center px-2 py-4 sm:px-4 lg:px-6">
+            <p className="eyebrow">Welcome Back</p>
+            <h1 className="display-font mt-5 max-w-3xl text-4xl font-semibold leading-tight text-[#F7F4EB] sm:text-5xl">
+              Welcome back! Sign in to continue your work smoothly.
+            </h1>
+            <p className="body-copy mt-5 max-w-2xl text-base sm:text-lg">
+              Access your uploads, review results, and continue your video search workflow from one simple and organized space.
+            </p>
 
-          <div className="mt-8 space-y-6">
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 flex items-center gap-2 text-xl font-medium text-[#DFFFE2]"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-                className="app-input text-lg"
-              />
-              {errors.email && (
-                <div className="mt-2 text-lg font-medium text-red-300">{errors.email}</div>
-              )}
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="panel-card rounded-[16px] p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/44">
+                  Stay Organized
+                </p>
+                <p className="display-font mt-3 text-2xl font-semibold text-[#F7F4EB]">
+                  Keep your searches, uploads, and results neatly in one place
+                </p>
+              </div>
+              <div className="rounded-[16px] bg-secondary p-5 text-[#F8F3E9]">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[rgba(248,243,233,0.56)]">
+                  Smooth Experience
+                </p>
+                <p className="display-font mt-3 text-2xl font-semibold">
+                  Fast access with a simple and secure login experience
+                </p>
+              </div>
             </div>
+          </section>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="mb-2 flex items-center gap-2 text-xl font-medium text-[#DFFFE2]"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                name="password"
-                placeholder="Enter your password"
-                value={formData.password}
-                onChange={handleChange}
-                className="app-input text-lg"
-              />
-              {errors.password && (
-                <div className="mt-2 text-lg font-medium text-red-300">{errors.password}</div>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-4 text-right">
-            <Link
-              to="/register?mode=forgot"
-              className="text-lg font-medium text-[#9DFFAB] underline underline-offset-4 transition hover:text-[#C7FFCF]"
-            >
-              Forgot Password?
-            </Link>
-          </div>
-
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="app-button app-button-primary mt-7 w-full text-2xl disabled:cursor-not-allowed disabled:opacity-70"
+          <form
+            className="flex h-full flex-col justify-center rounded-[22px] bg-deep p-7 text-white sm:p-8"
+            onSubmit={handleSubmit}
           >
-            {isSubmitting ? "Logging in..." : "Login"}
-          </button>
+            <div className="space-y-4">
+              <div>
+                <label
+                  htmlFor="email"
+                  className="mb-2 block text-sm font-semibold uppercase tracking-[0.16em] text-white/70"
+                >
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  placeholder="name@domain.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className="app-input"
+                />
+                {errors.email && (
+                  <div className="mt-2 text-sm font-medium text-red-300">{errors.email}</div>
+                )}
+              </div>
 
-          {success && (
-            <div className="mt-4 text-center text-lg font-semibold text-[#B7FFC1]">
-              {success}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="mb-2 block text-sm font-semibold uppercase tracking-[0.16em] text-white/70"
+                >
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  name="password"
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="app-input"
+                />
+                {errors.password && (
+                  <div className="mt-2 text-sm font-medium text-red-300">{errors.password}</div>
+                )}
+              </div>
             </div>
-          )}
 
-          {serverError && (
-            <div className="mt-4 text-center text-lg font-semibold text-red-300">
-              {serverError}
+            <div className="mt-4 text-right">
+              <Link
+                to="/register?mode=forgot"
+                className="text-sm font-semibold text-[#9DFFAB] underline underline-offset-4"
+              >
+                Forgot Password?
+              </Link>
             </div>
-          )}
 
-          <div className="mt-8 border-t border-[#7DDE86]/20 pt-6 text-center text-lg text-white/90">
-            Don&apos;t have an account?{" "}
-            <Link
-              to="/register"
-              className="font-semibold text-[#9DFFAB] underline underline-offset-4 transition hover:text-[#C7FFCF]"
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="app-button auth-submit-button mt-6 w-full"
             >
-              Register
-            </Link>
-          </div>
-        </form>
+              {isSubmitting ? "Signing you in..." : "Sign In"}
+            </button>
+
+            {success && (
+              <div className="mt-4 text-center text-sm font-semibold text-[#D9EBCF]">
+                {success}
+              </div>
+            )}
+
+            {serverError && (
+              <div className="mt-4 text-center text-sm font-semibold text-red-300">
+                {serverError}
+              </div>
+            )}
+
+            <div className="mt-6 pt-4 text-center text-sm text-white/72">
+              Don&apos;t have an account?{' '}
+              <Link
+                to="/register"
+                className="font-semibold text-[#9DFFAB] underline underline-offset-4"
+              >
+                Register
+              </Link>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -1,107 +1,215 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+const SearchIcon = () => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    className="h-11 w-11 text-[var(--accent)]"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.7"
+  >
+    <circle cx="11" cy="11" r="6.5" />
+    <path d="M16 16l4.5 4.5" strokeLinecap="round" />
+  </svg>
+);
+
+const PlaySearchIcon = () => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    className="h-11 w-11 text-[var(--accent)]"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.7"
+  >
+    <rect x="3.5" y="5" width="17" height="12.5" rx="2.5" />
+    <path d="M10 9.2v4.1l3.7-2.05L10 9.2z" fill="currentColor" stroke="none" />
+    <path d="M8 20.5h8" strokeLinecap="round" />
+  </svg>
+);
+
+const ShieldIcon = () => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 24 24"
+    className="h-11 w-11 text-[var(--accent)]"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.7"
+  >
+    <path d="M12 3l7 3.2v5.6c0 4.5-2.7 7.9-7 9.7-4.3-1.8-7-5.2-7-9.7V6.2L12 3z" />
+    <path d="M9.5 12l1.7 1.8 3.5-4" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+
 const features = [
-  "Semantic search across uploaded CCTV footage",
-  "Matched-frame previews that jump to the relevant moment",
-  "Private user-scoped video history and retrieval",
-  "AI-powered post-event investigation support",
+  {
+    icon: SearchIcon,
+    title: "Smart Natural Search",
+    description:
+      "Describe events in simple language and quickly find the closest matching moments from your stored footage.",
+  },
+  {
+    icon: PlaySearchIcon,
+    title: "Quick Review Playback",
+    description:
+      "Jump directly to important timestamps with smooth preview playback that reduces manual searching.",
+  },
+  {
+    icon: ShieldIcon,
+    title: "Private Workspace",
+    description:
+      "Keep uploads, search activity, and reviewed clips organized safely in your personal workspace.",
+  },
+];
+
+const metrics = [
+  { label: "Fast Search", value: "Find moments instantly" },
+  { label: "Smart Results", value: "Relevant timestamp matches" },
+  { label: "Secure Space", value: "Private case history" },
 ];
 
 const steps = [
   {
-    title: "1. Upload footage",
-    description: "Go to Video Input, select a video file, choose sampling FPS, and optionally add notes about the incident.",
+    number: "01",
+    title: "Upload your footage",
+    description:
+      "Add CCTV clips securely and include optional notes for better search context.",
   },
   {
-    title: "2. Let the system analyze it",
-    description: "The backend extracts frames, generates embeddings, and stores searchable vectors for later retrieval.",
+    number: "02",
+    title: "Process the video",
+    description:
+      "The system processes frames and prepares your video for fast semantic search.",
   },
   {
-    title: "3. Search naturally",
-    description: "Use everyday text like 'person wearing red near the entrance' to find the most relevant video intervals.",
+    number: "03",
+    title: "Build searchable data",
+    description:
+      "Each upload is indexed so your footage becomes ready for quick retrieval.",
   },
   {
-    title: "4. Review the matched preview",
-    description: "Open the result and the preview starts close to the best matched frame so you can verify the event faster.",
+    number: "04",
+    title: "Search naturally",
+    description:
+      "Use simple prompts like 'person near entrance' and get the best matches quickly.",
+  },
+  {
+    number: "05",
+    title: "Preview the result",
+    description:
+      "Open the suggested match and inspect the timestamp without extra manual scanning.",
+  },
+  {
+    number: "06",
+    title: "Review and confirm",
+    description:
+      "Open the matched timestamp, preview the clip, and confirm events faster.",
   },
 ];
 
 const Landing = () => {
   return (
     <div className="min-h-screen page-background text-white">
-      <main className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-        <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
-          <div className="surface-card rounded-[32px] p-8 sm:p-10">
-            <p className="inline-flex rounded-full border border-[#86F5A8]/25 bg-[#102317] px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.24em] text-[#CFFFD8]">
-              Multimodal CCTV Retrieval
-            </p>
-            <h1 className="section-title mt-6 max-w-3xl">
-              Find the right moment in your video footage without scrubbing through everything.
+      <main className="max-w-full py-10">
+        <section className="px-2 py-6 sm:px-4 lg:px-6 lg:py-8">
+          <section className="landing-shell-card mx-auto max-w-4xl py-4 text-center">
+            <p className="eyebrow">Smart CCTV Search</p>
+            <h1 className="mt-5 text-4xl font-semibold leading-tight text-[#F7F4EB] sm:text-5xl">
+              Find important moments in your surveillance footage with ease.
             </h1>
-            <p className="body-copy mt-5 max-w-2xl text-base sm:text-lg">
-              Upload recorded video, describe what happened in plain language, and review AI-ranked matches with timestamps and preview playback near the matched frame.
+            <p className="body-copy mx-auto mt-6 max-w-2xl text-base leading-8 text-white/75 sm:text-lg">
+              Upload your videos, describe what you want to find, and review accurate matched
+              moments from one clean workspace.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
-              <Link
-                to="/video-input"
-                className="app-button app-button-primary text-sm"
-              >
-                Go To Video Input
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <Link to="/video-input" className="app-button auth-submit-button">
+                Start Searching
               </Link>
-              <Link
-                to="/history"
-                className="app-button app-button-secondary text-sm"
-              >
-                Open Search History
+              <Link to="/history" className="app-button auth-submit-button">
+                View Search History
               </Link>
             </div>
+          </section>
+        </section>
 
-            <div className="mt-10 grid gap-3 sm:grid-cols-2">
-              {features.map((feature) => (
-                <div key={feature} className="rounded-2xl border border-white/8 bg-white/5 px-4 py-4 text-sm text-white/84">
-                  {feature}
+        <section id="services" className="mt-14 bg-secondary py-12 sm:py-14">
+          <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-8">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="eyebrow">Core Features</p>
+              <h2 className="mt-4 text-3xl font-semibold leading-tight text-[#F7F4EB] sm:text-4xl">
+                Everything designed for simple review.
+              </h2>
+              <p className="body-copy mx-auto mt-5 max-w-2xl text-white/70 leading-8">
+                A smoother workflow that helps you search, verify, and confirm events without friction.
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-8 lg:grid-cols-3">
+              {features.map((feature) => {
+                const Icon = feature.icon;
+
+                return (
+                  <article
+                    key={feature.title}
+                    className="flex h-full flex-col items-center px-6 py-4 text-center"
+                  >
+                    <Icon />
+                    <h3 className="mt-6 text-2xl font-semibold text-[#F7F4EB]">{feature.title}</h3>
+                    <p className="mt-4 max-w-sm text-sm leading-7 text-white/72">
+                      {feature.description}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-14 px-2 py-12 sm:px-4 lg:px-6 ">
+          <div className="mx-auto max-w-[1200px]">
+            <div className="mx-auto max-w-3xl text-center">
+              <p className="eyebrow">How It Works</p>
+              <h2 className="mt-4 text-3xl font-semibold text-[#F7F4EB] sm:text-4xl">
+                From upload to result in six simple steps.
+              </h2>
+              <p className="body-copy mx-auto mt-5 max-w-2xl text-white/70 leading-8">
+                The workflow stays clear from ingestion to review, so every next action feels obvious.
+              </p>
+            </div>
+
+            <div className="mt-10 grid  md:grid-cols-2 xl:grid-cols-3">
+              {steps.map((step, index) => (
+                <div key={step.title} className="relative">
+                  <article
+                    className={`flex h-full flex-col items-center px-7 py-7 text-center ${
+                      index % 2 === 1 ? "bg-secondary" : "bg-deep"
+                    }`}
+                  >
+                    <div
+                      className="text-[0.72rem] font-semibold uppercase tracking-[0.26em] text-[var(--accent)]"
+                    >
+                      Step {step.number}
+                    </div>
+                    <h3 className="mt-5 text-2xl font-semibold text-white">
+                      {step.title}
+                    </h3>
+                    <p className="mt-5 max-w-sm text-sm leading-7 text-white/72">
+                      {step.description}
+                    </p>
+                  </article>
                 </div>
               ))}
             </div>
           </div>
-
-          <aside className="surface-card rounded-[32px] p-7">
-            <p className="text-xs uppercase tracking-[0.24em] text-[#9ED7A8]/64">What you get</p>
-            <div className="mt-5 space-y-4">
-              <div className="rounded-2xl border border-white/8 bg-black/14 p-4">
-                <p className="text-sm text-white/52">Search style</p>
-                <p className="mt-2 text-lg font-semibold text-white">Natural-language investigation</p>
-              </div>
-              <div className="rounded-2xl border border-white/8 bg-black/14 p-4">
-                <p className="text-sm text-white/52">Best for</p>
-                <p className="mt-2 text-lg font-semibold text-white">Post-event review and evidence triage</p>
-              </div>
-              <div className="rounded-2xl border border-white/8 bg-black/14 p-4">
-                <p className="text-sm text-white/52">Output</p>
-                <p className="mt-2 text-lg font-semibold text-white">Ranked matches with score, interval, and preview</p>
-              </div>
-            </div>
-          </aside>
-        </section>
-
-        <section id="services" className="surface-card mt-12 rounded-[32px] p-8 sm:p-10">
-          <p className="text-xs uppercase tracking-[0.24em] text-[#9ED7A8]/64">How To Use</p>
-          <h2 className="mt-3 text-3xl font-semibold text-white">Use the app in four simple steps</h2>
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {steps.map((step) => (
-              <article key={step.title} className="rounded-[24px] border border-white/8 bg-white/5 p-5">
-                <h3 className="text-lg font-semibold text-[#DFFFE2]">{step.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-white/72">{step.description}</p>
-              </article>
-            ))}
-          </div>
         </section>
       </main>
 
-      <footer className="border-t border-white/8 bg-[rgba(8,14,10,0.9)] px-4 py-5 text-center text-sm text-white/58 backdrop-blur-xl">
-        2026 CCTV Secure. Built for searchable video investigation workflows.
+      <footer className="bg-[rgba(8,14,10,0.88)] px-4 py-5 text-center text-sm text-white/58 backdrop-blur-xl">
+        2026 CCTV Secure · Smarter video search with a clean and modern workflow.
       </footer>
     </div>
   );

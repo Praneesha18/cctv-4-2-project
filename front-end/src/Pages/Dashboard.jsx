@@ -56,9 +56,9 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen page-background text-white">
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <section className="surface-card rounded-[28px] px-6 py-7 sm:px-8">
+        <section className="px-1 py-3 sm:px-2">
           <p className="text-xs uppercase tracking-[0.24em] text-[#9ED7A8]/62">Dashboard</p>
-          <h1 className="mt-3 text-3xl font-semibold text-white">Monitor uploads, investigation progress, and recent activity.</h1>
+          <h1 className="mt-3 text-2xl font-semibold text-white">Monitor uploads, investigation progress, and recent activity.</h1>
           {user && (
             <p className="mt-3 text-sm text-white/68">
               Signed in as <span className="font-semibold text-[#DFFFE2]">{user.name || user.email}</span>
@@ -72,7 +72,7 @@ const Dashboard = () => {
             <button
               type="button"
               onClick={() => navigate("/login")}
-              className="mt-4 rounded-2xl border border-[#7DDE86]/45 bg-gradient-to-r from-[#2B7D37] to-[#4BB85B] px-4 py-2 text-sm font-semibold"
+              className="mt-4 rounded-2xl bg-[#8BAE66] px-4 py-2 text-sm font-semibold text-[#0B140C]"
             >
               Go to Login
             </button>
@@ -103,11 +103,11 @@ const Dashboard = () => {
         </section>
 
         <section className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <div className="surface-card rounded-[28px] p-6">
+          <div className="p-1">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-[#9ED7A8]/62">Recent uploads</p>
-                <h2 className="mt-2 text-2xl font-semibold text-white">Latest analysis activity</h2>
+                <h2 className="mt-2 text-xl font-semibold text-white">Latest analysis activity</h2>
               </div>
               <Link to="/video-input" className="app-button app-button-secondary text-sm">
                 Upload another video
@@ -130,7 +130,7 @@ const Dashboard = () => {
                         <p className="text-lg font-semibold text-[#DFFFE2]">{item.originalFileName}</p>
                         <p className="mt-1 text-sm text-white/58">{new Date(item.createdAt).toLocaleString()}</p>
                       </div>
-                      <span className="rounded-full border border-[#86F5A8]/25 bg-[#102317] px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#CFFFD8]">
+                      <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#CFFFD8]">
                         {item.status}
                       </span>
                     </div>
@@ -152,9 +152,9 @@ const Dashboard = () => {
           </div>
 
           <div className="space-y-6">
-            <section className="surface-card rounded-[28px] p-6">
+            <section className="p-1">
               <p className="text-xs uppercase tracking-[0.24em] text-[#9ED7A8]/62">Input preview</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Most recent uploaded input</h2>
+              <h2 className="mt-2 text-xl font-semibold text-white">Most recent uploaded input</h2>
               {!latestAnalysis && (
                 <p className="mt-4 text-sm leading-6 text-white/72">Upload a video to see a quick summary of the latest input here.</p>
               )}
@@ -184,9 +184,9 @@ const Dashboard = () => {
               )}
             </section>
 
-            <section className="surface-card rounded-[28px] p-6">
+            <section className="p-1">
               <p className="text-xs uppercase tracking-[0.24em] text-[#9ED7A8]/62">Previous searches</p>
-              <h2 className="mt-2 text-2xl font-semibold text-white">Recent query shortcuts</h2>
+              <h2 className="mt-2 text-xl font-semibold text-white">Recent query shortcuts</h2>
               {previousQueries.length === 0 ? (
                 <p className="mt-4 text-sm leading-6 text-white/72">Run a few searches from the History page and your recent queries will appear here.</p>
               ) : (
@@ -195,7 +195,7 @@ const Dashboard = () => {
                     <Link
                       key={entry.id}
                       to="/history"
-                      className="panel-card flex items-center justify-between gap-3 rounded-[22px] p-4 transition hover:bg-white/8"
+                      className="panel-card flex items-center justify-between gap-3 rounded-[22px] p-4"
                     >
                       <div>
                         <p className="text-sm font-semibold text-[#E8F6E7]">{entry.query}</p>

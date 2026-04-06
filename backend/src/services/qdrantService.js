@@ -1,15 +1,30 @@
 const QDRANT_URL = process.env.QDRANT_URL || "http://localhost:6333";
 const QDRANT_COLLECTION = process.env.QDRANT_COLLECTION || "video_embeddings";
 const VECTOR_SIZE = 512;
-const MIN_SEARCH_SCORE_THRESHOLD = 0.27;
 const SEARCH_SCORE_THRESHOLD = Math.max(
-  MIN_SEARCH_SCORE_THRESHOLD,
-  Number(process.env.QDRANT_SEARCH_SCORE_THRESHOLD || MIN_SEARCH_SCORE_THRESHOLD),
+  0,
+  Number(process.env.QDRANT_SEARCH_SCORE_THRESHOLD || 0),
 );
 const SEARCH_CANDIDATE_MULTIPLIER = Math.max(
   1,
   Number(process.env.QDRANT_SEARCH_CANDIDATE_MULTIPLIER || 8),
 );
+
+function normalizeVector(vector) {
+  if (!Array.isArray(vector) || vector.length === 0) {
+    return vector;
+  }
+
+  const magnitude = Math.sqrt(
+    vector.reduce((sum, value) => sum + (Number(value) || 0) * (Number(value) || 0), 0),
+  );
+
+  if (!magnitude) {
+    return vector.map((value) => Number(value) || 0);
+  }
+
+  return vector.map((value) => (Number(value) || 0) / magnitude);
+}
 
 function getCollectionVectorsConfig(collectionResult) {
   const vectors = collectionResult?.config?.params?.vectors;
@@ -102,52 +117,92 @@ async function upsertPoints(points) {
     return;
   }
 
-  const vectorSize = points[0]?.vector?.length || VECTOR_SIZE;
+  const normalizedPoints = points.map((point) => ({
+    ...point,
+    vector: normalizeVector(point.vector),
+  }));
+  const vectorSize = normalizedPoints[0]?.vector?.length || VECTOR_SIZE;
   await ensureCollection(vectorSize);
 
   await qdrantRequest(`/collections/${QDRANT_COLLECTION}/points?wait=true`, {
     method: "PUT",
     body: JSON.stringify({
-      points,
+      points: normalizedPoints,
     }),
   });
 }
 
 async function searchPoints(vector, userId, limit = 5, pointType = "frame") {
-  await ensureCollection(vector.length || VECTOR_SIZE);
+  const normalizedVector = normalizeVector(vector);
+  await ensureCollection(normalizedVector.length || VECTOR_SIZE);
   const rawLimit = Math.max(limit, limit * SEARCH_CANDIDATE_MULTIPLIER);
+  const body = {
+    vector: normalizedVector,
+    limit: rawLimit,
+    with_payload: true,
+    with_vector: false,
+    filter: {
+      must: [
+        {
+          key: "userId",
+          match: {
+            value: userId,
+          },
+        },
+        {
+          key: "pointType",
+          match: {
+            value: pointType,
+          },
+        },
+      ],
+    },
+  };
+
+  if (SEARCH_SCORE_THRESHOLD > 0) {
+    body.score_threshold = SEARCH_SCORE_THRESHOLD;
+  }
 
   const data = await qdrantRequest(`/collections/${QDRANT_COLLECTION}/points/search`, {
     method: "POST",
+    body: JSON.stringify(body),
+  });
+
+  return data.result || [];
+}
+
+async function deletePointsByAnalysisId(analysisId, userId) {
+  if (!analysisId || !userId) {
+    return;
+  }
+
+  await ensureCollection();
+
+  await qdrantRequest(`/collections/${QDRANT_COLLECTION}/points/delete?wait=true`, {
+    method: "POST",
     body: JSON.stringify({
-      vector,
-      limit: rawLimit,
-      with_payload: true,
-      with_vector: false,
-      score_threshold: SEARCH_SCORE_THRESHOLD,
       filter: {
         must: [
+          {
+            key: "analysisId",
+            match: {
+              value: analysisId,
+            },
+          },
           {
             key: "userId",
             match: {
               value: userId,
             },
           },
-          {
-            key: "pointType",
-            match: {
-              value: pointType,
-            },
-          },
         ],
       },
     }),
   });
-
-  return data.result || [];
 }
 
 module.exports = {
+  deletePointsByAnalysisId,
   ensureCollection,
   searchPoints,
   upsertPoint,

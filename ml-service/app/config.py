@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     app_name: str = "ML Service"
     app_host: str = "0.0.0.0"
     app_port: int = 8000
-    clip_model_name: str = "ViT-B/32"
+    clip_model_name: str = "ViT-B/16"
     clip_cache_dir: str = "/tmp/clip-cache"
 
     model_config = SettingsConfigDict(

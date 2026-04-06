@@ -124,3 +124,24 @@ export function addSearchHistory(query) {
   localStorage.setItem(storageKey, JSON.stringify(nextHistory));
   return nextHistory;
 }
+
+export function removeSearchHistoryEntry(entryId) {
+  const storageKey = getSearchHistoryStorageKey();
+  if (!storageKey) {
+    return [];
+  }
+
+  const nextHistory = getSearchHistory().filter((item) => item.id !== entryId);
+  localStorage.setItem(storageKey, JSON.stringify(nextHistory));
+  return nextHistory;
+}
+
+export function clearSearchHistory() {
+  const storageKey = getSearchHistoryStorageKey();
+  if (!storageKey) {
+    return [];
+  }
+
+  localStorage.removeItem(storageKey);
+  return [];
+}

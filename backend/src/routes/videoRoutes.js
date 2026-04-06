@@ -30,7 +30,10 @@ const upload = multer({
 router.post("/ingest", protect, upload.single("video"), videoController.ingestVideo);
 router.get("/history", protect, videoController.getHistory);
 router.get("/dashboard", protect, videoController.getDashboard);
+router.get("/:analysisId/frames", protect, videoController.getAnalysisFrames);
+router.get("/:analysisId/frame-preview", protect, videoController.streamFramePreview);
 router.post("/search", protect, videoController.searchHistory);
+router.delete("/:analysisId", protect, videoController.deleteAnalysis);
 router.get("/file/:analysisId", protect, videoController.streamVideo);
 
 module.exports = router;

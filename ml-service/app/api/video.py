@@ -1,55 +1,84 @@
+import cv2
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from app.services.frame_processor import build_window_embeddings, frames_to_embeddings
+from app.services.frame_processor import frames_to_embeddings
 from app.utils.frame_extractor import extract_frames
 
 router = APIRouter()
 
 
-class VideoRequest(BaseModel):
-    video_path: str = Field(..., min_length=1, description="Path to a local video file")
-    fps: float = Field(1.0, gt=0, description="Frames per second to sample")
+class VideoEmbedRequest(BaseModel):
+    video_path: str = Field(..., min_length=1, description="Path to the video file")
+    fps: float = Field(2, gt=0, description="Sampling rate for frame extraction")
 
 
-class VideoResponse(BaseModel):
-    embeddings: list[list[float]]
-    frame_count: int
-    frame_samples: list[dict[str, float | int]]
-    window_embeddings: list[list[float]]
-    window_samples: list[dict[str, float | int]]
+class FramePreviewRequest(BaseModel):
+    video_path: str = Field(..., min_length=1, description="Path to the video file")
+    timestamp_seconds: float = Field(0, ge=0, description="Frame timestamp")
+
+
+def _extract_embeddings_and_samples(video_path: str, fps: float):
+    frames = extract_frames(video_path, fps=fps)
+    raw_frames = [item["frame"] for item in frames]
+    frame_samples = [
+        {
+            "frame_index": int(item["frame_index"]),
+            "timestamp_seconds": float(item["timestamp_seconds"]),
+            "quality": item.get("quality", {}),
+        }
+        for item in frames
+    ]
+    frame_embeddings = frames_to_embeddings(raw_frames)
+    return frame_embeddings, frame_samples
+
+
+def _load_preview_frame(video_path: str, timestamp_seconds: float):
+    capture = cv2.VideoCapture(video_path)
+    if not capture.isOpened():
+        raise FileNotFoundError(f"Could not open video file: {video_path}")
+
+    capture.set(cv2.CAP_PROP_POS_MSEC, max(0.0, float(timestamp_seconds)) * 1000.0)
+    success, frame = capture.read()
+    capture.release()
+
+    if not success or frame is None:
+        raise ValueError("Could not extract preview frame from the video.")
+
+    success, encoded = cv2.imencode(".jpg", frame)
+    if not success:
+        raise ValueError("Could not encode preview frame.")
+
+    return encoded.tobytes()
 
 
 @router.post("/embed/video")
-def embed_video(req: VideoRequest) -> VideoResponse:
+def embed_video(req: VideoEmbedRequest) -> dict:
     try:
-        frame_samples = extract_frames(req.video_path, fps=req.fps)
-        embeddings = frames_to_embeddings([sample["frame"] for sample in frame_samples])
-        window_embeddings, window_samples = build_window_embeddings(embeddings, frame_samples)
-        serializable_samples = [
-            {
-                "frame_index": sample["frame_index"],
-                "timestamp_seconds": round(sample["timestamp_seconds"], 3),
-            }
-            for sample in frame_samples
-        ]
-        serializable_window_samples = [
-            {
-                "start_frame_index": sample["start_frame_index"],
-                "end_frame_index": sample["end_frame_index"],
-                "start_timestamp_seconds": round(sample["start_timestamp_seconds"], 3),
-                "end_timestamp_seconds": round(sample["end_timestamp_seconds"], 3),
-                "center_frame_index": sample["center_frame_index"],
-                "center_timestamp_seconds": round(sample["center_timestamp_seconds"], 3),
-            }
-            for sample in window_samples
-        ]
-        return VideoResponse(
-            embeddings=embeddings.tolist(),
-            frame_count=len(frame_samples),
-            frame_samples=serializable_samples,
-            window_embeddings=window_embeddings.tolist(),
-            window_samples=serializable_window_samples,
+        frame_embeddings, frame_samples = _extract_embeddings_and_samples(
+            req.video_path,
+            req.fps,
         )
     except (FileNotFoundError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    return {
+        "embeddings": frame_embeddings.tolist(),
+        "frame_samples": frame_samples,
+        "frame_count": int(len(frame_samples)),
+    }
+
+
+@router.post("/preview/frame")
+def preview_frame(req: FramePreviewRequest) -> Response:
+    try:
+        image_bytes = _load_preview_frame(req.video_path, req.timestamp_seconds)
+    except (FileNotFoundError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    return Response(content=image_bytes, media_type="image/jpeg")

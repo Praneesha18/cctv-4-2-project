@@ -1,12 +1,16 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const userModel = require("../models/usermodel");
+const {
+  normalizeEmail,
+  validateEmailWithAbstract,
+} = require("../services/emailValidationService");
 
 const authController = {
   register: async (req, res) => {
     try {
       const name = req.body.name?.trim();
-      const email = req.body.email?.trim().toLowerCase();
+      const email = normalizeEmail(req.body.email);
       const phone = req.body.phone?.trim() || "";
       const password = req.body.password?.trim();
 
@@ -23,6 +27,24 @@ const authController = {
           message: "Password must be at least 6 characters",
         });
       }
+
+      const validation = await validateEmailWithAbstract(email);
+      if (!validation.isValid) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email address",
+          validation: {
+            email: validation.email,
+            isValid: validation.isValid,
+            deliverability: validation.deliverability,
+            suggestedCorrection: validation.suggestedCorrection,
+          },
+        });
+      }
+
+   
+
+      
 
       const existingUser = await userModel.findOne({ email });
       if (existingUser) {
@@ -51,9 +73,11 @@ const authController = {
         },
       });
     } catch (err) {
-      return res.status(500).json({
+      const statusCode = err.statusCode || 500;
+
+      return res.status(statusCode).json({
         success: false,
-        message: "Server error",
+        message: err.message || "Server error",
         error: err.message,
       });
     }
@@ -61,7 +85,7 @@ const authController = {
 
   login: async (req, res) => {
     try {
-      const email = req.body.email?.trim().toLowerCase();
+      const email = normalizeEmail(req.body.email);
       const password = req.body.password?.trim();
 
       if (!email || !password) {
@@ -130,6 +154,25 @@ const authController = {
         success: false,
         message: "Server error",
         error: err.message,
+      });
+    }
+  },
+
+  validateEmail: async (req, res) => {
+    try {
+      const validation = await validateEmailWithAbstract(req.body.email);
+
+      return res.status(200).json({
+        success: true,
+        message: validation.isValid ? "Email is valid" : "Email validation failed",
+        validation,
+      });
+    } catch (err) {
+      const statusCode = err.statusCode || 500;
+
+      return res.status(statusCode).json({
+        success: false,
+        message: err.message || "Email validation failed",
       });
     }
   },
