@@ -10,6 +10,10 @@ const frameSampleSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    quality: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
   },
   { _id: false },
 );
@@ -62,7 +66,25 @@ const analysisSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    summaryEmbeddingDimension: {
+      type: Number,
+      default: 0,
+    },
+    actionEmbeddingDimension: {
+      type: Number,
+      default: 0,
+    },
     qdrantPointId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    summaryQdrantPointId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    actionQdrantPointId: {
       type: String,
       default: "",
       trim: true,

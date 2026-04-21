@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from app.services.frame_processor import frames_to_embeddings
+from app.services.frame_processor import POOL_WINDOW_SIZE, frames_to_embeddings
 from app.utils.frame_extractor import extract_frames
 
 router = APIRouter()
@@ -30,8 +30,39 @@ def _extract_embeddings_and_samples(video_path: str, fps: float):
         }
         for item in frames
     ]
-    frame_embeddings = frames_to_embeddings(raw_frames)
-    return frame_embeddings, frame_samples
+    frame_embeddings, pooled_embeddings, action_embedding = frames_to_embeddings(raw_frames)
+    pooled_samples = []
+    effective_window_size = max(1, min(len(frame_samples), POOL_WINDOW_SIZE))
+    for start in range(0, len(frame_samples) - effective_window_size + 1):
+        window_samples = frame_samples[start : start + effective_window_size]
+        if not window_samples:
+            continue
+
+        representative_index = min(len(window_samples) - 1, len(window_samples) // 2)
+        representative_sample = window_samples[representative_index]
+        pooled_samples.append(
+            {
+                "start_frame_index": int(window_samples[0]["frame_index"]),
+                "end_frame_index": int(window_samples[-1]["frame_index"]),
+                "start_timestamp_seconds": float(window_samples[0]["timestamp_seconds"]),
+                "end_timestamp_seconds": float(window_samples[-1]["timestamp_seconds"]),
+                "representative_frame_index": int(
+                    representative_sample["frame_index"]
+                ),
+                "representative_timestamp_seconds": float(
+                    representative_sample["timestamp_seconds"]
+                ),
+                "window_frame_count": int(len(window_samples)),
+            }
+        )
+
+    return (
+        frame_embeddings,
+        pooled_embeddings,
+        action_embedding,
+        frame_samples,
+        pooled_samples,
+    )
 
 
 def _load_preview_frame(video_path: str, timestamp_seconds: float):
@@ -56,10 +87,13 @@ def _load_preview_frame(video_path: str, timestamp_seconds: float):
 @router.post("/embed/video")
 def embed_video(req: VideoEmbedRequest) -> dict:
     try:
-        frame_embeddings, frame_samples = _extract_embeddings_and_samples(
-            req.video_path,
-            req.fps,
-        )
+        (
+            frame_embeddings,
+            pooled_embeddings,
+            action_embedding,
+            frame_samples,
+            pooled_samples,
+        ) = _extract_embeddings_and_samples(req.video_path, req.fps)
     except (FileNotFoundError, ValueError) as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -67,8 +101,13 @@ def embed_video(req: VideoEmbedRequest) -> dict:
 
     return {
         "embeddings": frame_embeddings.tolist(),
+        "pooled_embeddings": pooled_embeddings.tolist(),
+        "action_embedding": action_embedding.tolist(),
         "frame_samples": frame_samples,
+        "pooled_samples": pooled_samples,
         "frame_count": int(len(frame_samples)),
+        "pooled_count": int(len(pooled_samples)),
+        "pool_window_size": POOL_WINDOW_SIZE,
     }
 
 

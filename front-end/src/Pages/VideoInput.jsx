@@ -22,11 +22,19 @@ function formatTimestamp(seconds) {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
+function formatMetric(value, digits = 2) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return "N/A";
+  }
+
+  return numeric.toFixed(digits);
+}
+
 const VideoInput = () => {
   const navigate = useNavigate();
   const [videoFile, setVideoFile] = useState(null);
   const [notes, setNotes] = useState("");
-  const [fps, setFps] = useState("2");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -121,7 +129,6 @@ const VideoInput = () => {
       const formData = new FormData();
       formData.append("video", videoFile);
       formData.append("notes", notes);
-      formData.append("fps", fps);
 
       const data = await apiRequest("/api/video/ingest", {
         method: "POST",
@@ -239,10 +246,6 @@ const VideoInput = () => {
                     <p className="text-white/55">Sampled frames</p>
                     <p className="mt-1 font-semibold text-white">{selectedHistoryItem.frameCount}</p>
                   </div>
-                  <div className="rounded-2xl border border-white/10 bg-[#08130D]/70 p-4">
-                    <p className="text-white/55">FPS</p>
-                    <p className="mt-1 font-semibold text-white">{selectedHistoryItem.fps || "N/A"}</p>
-                  </div>
                   <div className="rounded-2xl border border-white/10 bg-[#08130D]/70 p-4 sm:col-span-2">
                     <p className="text-white/55">Created</p>
                     <p className="mt-1 font-semibold text-white">
@@ -336,6 +339,13 @@ const VideoInput = () => {
                   <div className="p-3 text-sm text-white/80">
                     <p className="font-semibold text-[#DFFFE2]">Frame {frame.frameIndex}</p>
                     <p className="mt-1 text-white/60">{formatTimestamp(frame.timestampSeconds)}</p>
+                    <div className="mt-3 space-y-1 text-xs text-white/65">
+                      <p>Blur: {formatMetric(frame.quality?.blur_score, 1)}</p>
+                      <p>Motion ratio: {formatMetric(frame.quality?.motion_ratio, 4)}</p>
+                      <p>Motion: {frame.quality?.has_motion ? "Yes" : "No"}</p>
+                      <p>Camera motion: {frame.quality?.has_camera_motion ? "Yes" : "No"}</p>
+                      <p>Keep interval: {formatMetric(frame.quality?.keep_interval_seconds, 2)}s</p>
+                    </div>
                   </div>
                 </article>
               ))}
@@ -394,28 +404,7 @@ const VideoInput = () => {
                 )}
               </div>
 
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="fps"
-                    className="mb-2 block text-base font-medium text-[#DFFFE2]"
-                  >
-                    Sampling FPS
-                  </label>
-                  <input
-                    id="fps"
-                    type="number"
-                    min="1"
-                    max="10"
-                    step="1"
-                    value={fps}
-                    onChange={(e) => setFps(e.target.value)}
-                    disabled={!isAuthenticated()}
-                    className="app-input"
-                  />
-                </div>
-
-                <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
+              <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
                   <p className="text-white/55">Current selection</p>
                   <p className="mt-1 font-semibold text-white">
                     {videoFile?.name || "No file selected"}
@@ -423,7 +412,6 @@ const VideoInput = () => {
                   <p className="mt-2 text-sm text-white/62">
                     {videoFile ? formatBytes(videoFile.size) : "Waiting for video"}
                   </p>
-                </div>
               </div>
 
               <div>

@@ -132,7 +132,35 @@ async function upsertPoints(points) {
   });
 }
 
-async function searchPoints(vector, userId, limit = 5, pointType = "frame") {
+function buildMustFilter(userId, pointType, options = {}) {
+  const must = [
+    {
+      key: "userId",
+      match: {
+        value: userId,
+      },
+    },
+    {
+      key: "pointType",
+      match: {
+        value: pointType,
+      },
+    },
+  ];
+
+  if (Array.isArray(options.analysisIds) && options.analysisIds.length > 0) {
+    must.push({
+      key: "analysisId",
+      match: {
+        any: options.analysisIds,
+      },
+    });
+  }
+
+  return must;
+}
+
+async function searchPoints(vector, userId, limit = 5, pointType = "frame", options = {}) {
   const normalizedVector = normalizeVector(vector);
   await ensureCollection(normalizedVector.length || VECTOR_SIZE);
   const rawLimit = Math.max(limit, limit * SEARCH_CANDIDATE_MULTIPLIER);
@@ -142,20 +170,7 @@ async function searchPoints(vector, userId, limit = 5, pointType = "frame") {
     with_payload: true,
     with_vector: false,
     filter: {
-      must: [
-        {
-          key: "userId",
-          match: {
-            value: userId,
-          },
-        },
-        {
-          key: "pointType",
-          match: {
-            value: pointType,
-          },
-        },
-      ],
+      must: buildMustFilter(userId, pointType, options),
     },
   };
 

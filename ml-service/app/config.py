@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     app_port: int = 8000
     clip_model_name: str = "ViT-B/16"
     clip_cache_dir: str = "/tmp/clip-cache"
+    clip_download_retries: int = 3
+    clip_download_retry_backoff_seconds: float = 2.0
 
     model_config = SettingsConfigDict(
         env_file=".env",
