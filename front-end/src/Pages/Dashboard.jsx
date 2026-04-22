@@ -56,9 +56,63 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen page-background text-white">
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <section className="px-1 py-3 sm:px-2">
-          <p className="text-xs uppercase tracking-[0.24em] text-[#9ED7A8]/62">Dashboard</p>
-          <h1 className="mt-3 text-2xl font-semibold text-white">Monitor uploads, investigation progress, and recent activity.</h1>
+        <section className="auth-shell">
+          <div className="auth-shell-card auth-shell-card-no-orb px-2 py-4 sm:px-4 lg:px-6">
+            <p className="eyebrow">Dashboard</p>
+            <h1 className="display-font mt-5 max-w-3xl text-4xl font-semibold leading-tight text-[#F7F4EB] sm:text-5xl">
+              Monitor uploads, results, and recent activity from one clean workspace.
+            </h1>
+            <p className="body-copy mt-5 max-w-2xl text-base sm:text-lg">
+              Review your latest analysis runs, check overall progress, and jump back into past searches without switching context.
+            </p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="panel-card rounded-[16px] p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/44">
+                  Activity
+                </p>
+                <p className="display-font mt-3 text-2xl font-semibold text-[#F7F4EB]">
+                  Track recent uploads and quickly continue your review workflow
+                </p>
+              </div>
+              <div className="rounded-[16px] bg-secondary p-5 text-[#F8F3E9]">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[rgba(248,243,233,0.56)]">
+                  Search Ready
+                </p>
+                <p className="display-font mt-3 text-2xl font-semibold">
+                  See what is complete, what failed, and what is ready to search next
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <section className="rounded-[22px] bg-deep p-7 text-white sm:p-8">
+            <p className="text-xs uppercase tracking-[0.24em] text-white/46">Overview</p>
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="panel-card rounded-[20px] p-5">
+                <p className="text-sm text-white/56">Total uploads</p>
+                <p className="mt-2 text-3xl font-semibold text-[#DFFFE2]">{stats.totalAnalyses || 0}</p>
+                <p className="mt-2 text-sm text-white/62">All analyses recorded for your account.</p>
+              </div>
+              <div className="panel-card rounded-[20px] p-5">
+                <p className="text-sm text-white/56">Success rate</p>
+                <p className="mt-2 text-3xl font-semibold text-[#DFFFE2]">{successRate}%</p>
+                <p className="mt-2 text-sm text-white/62">Based on completed versus failed uploads.</p>
+              </div>
+              <div className="panel-card rounded-[20px] p-5">
+                <p className="text-sm text-white/56">Completed</p>
+                <p className="mt-2 text-3xl font-semibold text-[#CFFFD8]">{stats.completedAnalyses || 0}</p>
+                <p className="mt-2 text-sm text-white/62">Ready to search and preview.</p>
+              </div>
+              <div className="panel-card rounded-[20px] p-5">
+                <p className="text-sm text-white/56">Failed</p>
+                <p className="mt-2 text-3xl font-semibold text-[#FFD1C7]">{stats.failedAnalyses || 0}</p>
+                <p className="mt-2 text-sm text-white/62">Uploads that need a retry or review.</p>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section className="mt-6 px-1 py-3 sm:px-2">
           {user && (
             <p className="mt-3 text-sm text-white/68">
               Signed in as <span className="font-semibold text-[#DFFFE2]">{user.name || user.email}</span>
@@ -78,29 +132,6 @@ const Dashboard = () => {
             </button>
           </section>
         )}
-
-        <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div className="panel-card rounded-[24px] p-5">
-            <p className="text-sm text-white/56">Total uploads</p>
-            <p className="mt-2 text-3xl font-semibold text-[#DFFFE2]">{stats.totalAnalyses || 0}</p>
-            <p className="mt-2 text-sm text-white/62">All analyses recorded for your account.</p>
-          </div>
-          <div className="panel-card rounded-[24px] p-5">
-            <p className="text-sm text-white/56">Completed</p>
-            <p className="mt-2 text-3xl font-semibold text-[#CFFFD8]">{stats.completedAnalyses || 0}</p>
-            <p className="mt-2 text-sm text-white/62">Ready to search and preview.</p>
-          </div>
-          <div className="panel-card rounded-[24px] p-5">
-            <p className="text-sm text-white/56">Failed</p>
-            <p className="mt-2 text-3xl font-semibold text-[#FFD1C7]">{stats.failedAnalyses || 0}</p>
-            <p className="mt-2 text-sm text-white/62">Uploads that need a retry or review.</p>
-          </div>
-          <div className="panel-card rounded-[24px] p-5">
-            <p className="text-sm text-white/56">Success rate</p>
-            <p className="mt-2 text-3xl font-semibold text-[#DFFFE2]">{successRate}%</p>
-            <p className="mt-2 text-sm text-white/62">Based on completed versus failed uploads.</p>
-          </div>
-        </section>
 
         <section className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
           <div className="p-1">
@@ -127,7 +158,7 @@ const Dashboard = () => {
                   <article key={item.id} className="panel-card rounded-[24px] p-5">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="text-lg font-semibold text-[#DFFFE2]">{item.originalFileName}</p>
+                      <p className="text-wrap-balanced text-lg font-semibold text-[#DFFFE2]">{item.originalFileName}</p>
                         <p className="mt-1 text-sm text-white/58">{new Date(item.createdAt).toLocaleString()}</p>
                       </div>
                       <span className="rounded-full bg-secondary px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-[#CFFFD8]">
@@ -162,7 +193,7 @@ const Dashboard = () => {
                 <div className="panel-card mt-5 space-y-4 rounded-[24px] p-5">
                   <div>
                     <p className="text-sm text-white/52">File name</p>
-                    <p className="mt-1 text-base font-semibold text-[#DFFFE2]">{latestAnalysis.originalFileName}</p>
+                    <p className="text-wrap-balanced mt-1 text-base font-semibold text-[#DFFFE2]">{latestAnalysis.originalFileName}</p>
                   </div>
                   <div>
                     <p className="text-sm text-white/52">Notes</p>

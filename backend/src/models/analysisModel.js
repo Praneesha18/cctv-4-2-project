@@ -31,6 +31,11 @@ const analysisSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    displayFileName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     storedFileName: {
       type: String,
       required: true,

@@ -15,25 +15,18 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatTimestamp(seconds) {
-  const totalSeconds = Math.max(0, Math.floor(Number(seconds) || 0));
-  const mins = Math.floor(totalSeconds / 60);
-  const secs = totalSeconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
-
-function formatMetric(value, digits = 2) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) {
-    return "N/A";
+function stripFileExtension(fileName) {
+  if (!fileName) {
+    return "";
   }
 
-  return numeric.toFixed(digits);
+  return fileName.replace(/\.[^/.]+$/, "");
 }
 
 const VideoInput = () => {
   const navigate = useNavigate();
   const [videoFile, setVideoFile] = useState(null);
+  const [displayFileName, setDisplayFileName] = useState("");
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
@@ -42,14 +35,11 @@ const VideoInput = () => {
   const [historyItems, setHistoryItems] = useState([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
   const [selectedHistoryId, setSelectedHistoryId] = useState("");
-  const [selectedFrames, setSelectedFrames] = useState([]);
-  const [isFramesLoading, setIsFramesLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const loadHistory = async (nextSelectedId = "") => {
     if (!isAuthenticated()) {
       setHistoryItems([]);
-      setSelectedFrames([]);
       return;
     }
 
@@ -71,41 +61,10 @@ const VideoInput = () => {
     loadHistory();
   }, []);
 
-  useEffect(() => {
-    if (!selectedHistoryId || !isAuthenticated()) {
-      setSelectedFrames([]);
-      return;
-    }
-
-    let isActive = true;
-    setIsFramesLoading(true);
-
-    apiRequest(`/api/video/${selectedHistoryId}/frames`)
-      .then((data) => {
-        if (isActive) {
-          setSelectedFrames(data.frames || []);
-        }
-      })
-      .catch((err) => {
-        if (isActive) {
-          setError(err.message || "Failed to load extracted frames.");
-          setSelectedFrames([]);
-        }
-      })
-      .finally(() => {
-        if (isActive) {
-          setIsFramesLoading(false);
-        }
-      });
-
-    return () => {
-      isActive = false;
-    };
-  }, [selectedHistoryId]);
-
   const handleFileChange = (e) => {
     const file = e.target.files?.[0] || null;
     setVideoFile(file);
+    setDisplayFileName(file ? stripFileExtension(file.name) : "");
     setStatus("");
     setError("");
     setAnalysis(null);
@@ -129,15 +88,17 @@ const VideoInput = () => {
       const formData = new FormData();
       formData.append("video", videoFile);
       formData.append("notes", notes);
+      formData.append("displayFileName", displayFileName.trim());
 
       const data = await apiRequest("/api/video/ingest", {
         method: "POST",
         body: formData,
       });
 
-      setStatus("Video analyzed successfully. Extracted frames are shown below for debugging.");
+      setStatus("Video analyzed successfully and added to your searchable history.");
       setAnalysis(data.analysis);
       setVideoFile(null);
+      setDisplayFileName("");
       setNotes("");
       setIsDialogOpen(false);
       setSelectedHistoryId(data.analysis?.id || "");
@@ -169,24 +130,54 @@ const VideoInput = () => {
           </section>
         )}
 
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="display-font text-xl font-semibold sm:text-2xl">
-              Video Input
+        <section className="auth-shell">
+          <section className="auth-shell-card auth-shell-card-no-orb px-2 py-4 sm:px-4 lg:px-6">
+            <p className="eyebrow">Video Input</p>
+            <h1 className="display-font mt-5 max-w-3xl text-4xl font-semibold leading-tight text-[#F7F4EB] sm:text-5xl">
+              Upload footage, rename it clearly, and keep each analysis easy to review later.
             </h1>
-            <p className="body-copy mt-3 max-w-2xl text-sm sm:text-base">
-              Select any previously ingested video to inspect it, or open the ingest dialog to add a new one.
+            <p className="body-copy mt-5 max-w-2xl text-base sm:text-lg">
+              Use a cleaner display name for each upload, add context notes, and preview previously ingested videos from one consistent workspace.
             </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => setIsDialogOpen(true)}
-            disabled={!isAuthenticated()}
-            className="app-button auth-submit-button shrink-0 disabled:opacity-60"
-          >
-            Ingest Video
-          </button>
-        </div>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <div className="panel-card rounded-[16px] p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/44">
+                  Better Labels
+                </p>
+                <p className="display-font mt-3 text-2xl font-semibold text-[#F7F4EB]">
+                  Give each upload a readable name before it enters your searchable archive
+                </p>
+              </div>
+              <div className="rounded-[16px] bg-secondary p-5 text-[#F8F3E9]">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[rgba(248,243,233,0.56)]">
+                  Quick Review
+                </p>
+                <p className="display-font mt-3 text-2xl font-semibold">
+                  Preview recent uploads and inspect the latest analysis details without clutter
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[22px] bg-deep p-7 text-white sm:p-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-white/46">Workspace</p>
+                <h2 className="display-font mt-3 text-2xl font-semibold text-[#F7F4EB]">
+                  Recent uploads and preview
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDialogOpen(true)}
+                disabled={!isAuthenticated()}
+                className="app-button auth-submit-button shrink-0 disabled:opacity-60"
+              >
+                Ingest Video
+              </button>
+            </div>
+          </section>
+        </section>
 
         {status && (
           <div className="mt-6 rounded-[18px] bg-secondary px-5 py-4 text-sm font-semibold text-[#E9FFED]">
@@ -201,7 +192,7 @@ const VideoInput = () => {
         )}
 
         <section className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-          <section className="rounded-[24px] bg-[#0B1911]/72 p-5 text-white shadow-[0_20px_50px_rgba(0,0,0,0.24)] sm:p-6">
+          <section className="surface-card rounded-[24px] p-5 text-white sm:p-6">
             <p className="eyebrow">Preview Screen</p>
             <h2 className="mt-4 text-2xl font-semibold text-[#F7F4EB]">
               Previously ingested video
@@ -236,7 +227,7 @@ const VideoInput = () => {
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl border border-white/10 bg-[#08130D]/70 p-4">
                     <p className="text-white/55">Video</p>
-                    <p className="mt-1 font-semibold text-white">{selectedHistoryItem.originalFileName}</p>
+                      <p className="text-wrap-balanced mt-1 font-semibold text-white">{selectedHistoryItem.originalFileName}</p>
                   </div>
                   <div className="rounded-2xl border border-white/10 bg-[#08130D]/70 p-4">
                     <p className="text-white/55">Status</p>
@@ -269,7 +260,7 @@ const VideoInput = () => {
             )}
           </section>
 
-          <aside className="rounded-[24px] bg-[#0B1911]/72 p-5 text-white shadow-[0_20px_50px_rgba(0,0,0,0.24)] sm:p-6">
+          <aside className="surface-card rounded-[24px] p-5 text-white sm:p-6">
             <p className="eyebrow">Recent Uploads</p>
             <h2 className="mt-4 text-2xl font-semibold text-[#F7F4EB]">
               Video list
@@ -293,8 +284,8 @@ const VideoInput = () => {
                       }`}
                     >
                       <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <p className="font-semibold text-white">{item.originalFileName}</p>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-wrap-balanced font-semibold text-white">{item.originalFileName}</p>
                           <p className="mt-1 text-sm leading-6 text-white/62">
                             {item.notes || "No notes added for this upload."}
                           </p>
@@ -315,47 +306,6 @@ const VideoInput = () => {
           </aside>
         </section>
 
-        <section className="mt-8 rounded-[24px] bg-[#0B1911]/72 p-5 text-white shadow-[0_20px_50px_rgba(0,0,0,0.24)] sm:p-6">
-          <p className="eyebrow">Debug Frames</p>
-          <h2 className="mt-4 text-2xl font-semibold text-[#F7F4EB]">Extracted frames after ingest</h2>
-          <p className="mt-3 text-sm leading-7 text-white/64">
-            These are the exact sampled frames used for embedding and similarity search.
-          </p>
-
-          {isFramesLoading ? (
-            <div className="mt-6 rounded-[22px] bg-[#08130D] px-6 py-10 text-center text-sm text-white/46">
-              Loading extracted frames...
-            </div>
-          ) : selectedFrames.length > 0 ? (
-            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-              {selectedFrames.map((frame) => (
-                <article key={`${selectedHistoryId}-${frame.frameIndex}-${frame.timestampSeconds}`} className="overflow-hidden rounded-[20px] border border-white/10 bg-white/5">
-                  <img
-                    src={buildAuthorizedMediaUrl(frame.previewPath)}
-                    alt={`Frame ${frame.frameIndex}`}
-                    className="aspect-video w-full bg-black object-cover"
-                    loading="lazy"
-                  />
-                  <div className="p-3 text-sm text-white/80">
-                    <p className="font-semibold text-[#DFFFE2]">Frame {frame.frameIndex}</p>
-                    <p className="mt-1 text-white/60">{formatTimestamp(frame.timestampSeconds)}</p>
-                    <div className="mt-3 space-y-1 text-xs text-white/65">
-                      <p>Blur: {formatMetric(frame.quality?.blur_score, 1)}</p>
-                      <p>Motion ratio: {formatMetric(frame.quality?.motion_ratio, 4)}</p>
-                      <p>Motion: {frame.quality?.has_motion ? "Yes" : "No"}</p>
-                      <p>Camera motion: {frame.quality?.has_camera_motion ? "Yes" : "No"}</p>
-                      <p>Keep interval: {formatMetric(frame.quality?.keep_interval_seconds, 2)}s</p>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="mt-6 rounded-[22px] bg-[#08130D] px-6 py-10 text-center text-sm text-white/46">
-              Select an ingested video to display its extracted frames.
-            </div>
-          )}
-        </section>
       </main>
 
       {isDialogOpen && (
@@ -368,7 +318,7 @@ const VideoInput = () => {
                   Add a new video for semantic search
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-white/64">
-                  Select a video, adjust sampling, and add notes before ingestion.
+                  Select a video, choose a cleaner display name, and add notes before ingestion.
                 </p>
               </div>
               <button
@@ -381,7 +331,7 @@ const VideoInput = () => {
             </div>
 
             <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
-              <div>
+              <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
                 <label
                   htmlFor="video-input-field"
                   className="mb-2 block text-base font-medium text-[#DFFFE2]"
@@ -397,21 +347,33 @@ const VideoInput = () => {
                   className="app-input text-sm file:mr-4 file:rounded-xl file:border-0 file:bg-[#2B7D37] file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-[#379446]"
                 />
                 {videoFile && (
-                  <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/80">
-                    <p className="font-semibold text-[#DFFFE2]">{videoFile.name}</p>
-                    <p className="mt-1">Selected file size: {formatBytes(videoFile.size)}</p>
+                  <div className="mt-3 rounded-2xl border border-white/10 bg-[#08130D]/70 p-4 text-sm text-white/80">
+                    <p className="text-xs uppercase tracking-[0.18em] text-white/45">Detected file</p>
+                    <p className="text-wrap-balanced mt-2 font-semibold text-[#DFFFE2]">{videoFile.name}</p>
+                    <p className="mt-2">Selected file size: {formatBytes(videoFile.size)}</p>
                   </div>
                 )}
               </div>
 
-              <div className="rounded-[22px] border border-white/10 bg-white/5 p-4">
-                  <p className="text-white/55">Current selection</p>
-                  <p className="mt-1 font-semibold text-white">
-                    {videoFile?.name || "No file selected"}
-                  </p>
-                  <p className="mt-2 text-sm text-white/62">
-                    {videoFile ? formatBytes(videoFile.size) : "Waiting for video"}
-                  </p>
+              <div>
+                <label
+                  htmlFor="display-file-name"
+                  className="mb-2 block text-base font-medium text-[#DFFFE2]"
+                >
+                  Display Name
+                </label>
+                <input
+                  id="display-file-name"
+                  type="text"
+                  value={displayFileName}
+                  onChange={(e) => setDisplayFileName(e.target.value)}
+                  disabled={!isAuthenticated()}
+                  placeholder="Front gate incident - evening shift"
+                  className="app-input"
+                />
+                <p className="mt-2 text-sm text-white/55">
+                  This name will be shown in history and search results instead of the raw upload filename.
+                </p>
               </div>
 
               <div>

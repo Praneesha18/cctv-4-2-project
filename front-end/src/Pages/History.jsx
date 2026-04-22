@@ -27,22 +27,6 @@ function formatHistoryDate(value) {
   return new Date(value).toLocaleString();
 }
 
-function formatSoftmaxRow(values) {
-  if (!Array.isArray(values) || values.length === 0) {
-    return "[]";
-  }
-
-  return `[${values.map((value) => Number(Number(value || 0).toFixed(6))).join(", ")}]`;
-}
-
-function formatSearchPath(values) {
-  if (!Array.isArray(values) || values.length === 0) {
-    return "none";
-  }
-
-  return values.join(" -> ");
-}
-
 function getMatchBadgeClasses(matchBand) {
   if (matchBand === "high") {
     return "bg-secondary text-[#CFFFD8]";
@@ -95,13 +79,15 @@ const SearchResultCard = ({ item, isLowConfidence = false, resultType = "segment
   const matchedImageUrl = item.matchedFrame?.previewPath
     ? buildAuthorizedMediaUrl(item.matchedFrame.previewPath)
     : "";
+  const playbackUrl = item.analysis?.videoStreamPath
+    ? `${buildAuthorizedMediaUrl(item.analysis.videoStreamPath)}#t=${Math.max(0, startSeconds)}`
+    : "";
   const matchPresentation = item.matchBand
     ? {
         matchBand: item.matchBand,
         matchLabel: item.matchLabel,
       }
     : getMatchPresentation(item.score);
-  const matchPercentage = (Number(item.probability || 0) * 100).toFixed(2);
 
   if (isFrameResult) {
     return (
@@ -122,26 +108,23 @@ const SearchResultCard = ({ item, isLowConfidence = false, resultType = "segment
             <span className="rounded-full bg-black/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#E8F6E7] backdrop-blur-sm">
               Matched frame
             </span>
-            <div className="rounded-[18px] border border-[#9ED7A8]/20 bg-[linear-gradient(135deg,rgba(159,214,138,0.95),rgba(214,255,220,0.82))] px-3 py-2 text-right text-[#08200D] shadow-[0_12px_30px_rgba(0,0,0,0.24)]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em]">Match</p>
-              <p className="text-lg font-bold leading-none">{matchPercentage}%</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-3 p-4 sm:p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs uppercase tracking-[0.2em] text-[#9ED7A8]/64">Video</p>
-              <h3 className="mt-1 truncate text-base font-semibold text-white">
-                {item.analysis.originalFileName}
-              </h3>
-            </div>
             <span
               className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getMatchBadgeClasses(matchPresentation.matchBand)}`}
             >
               {matchPresentation.matchLabel}
             </span>
+          </div>
+        </div>
+
+        <div className="space-y-3 p-4 sm:p-5">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9ED7A8]/64">Video</p>
+            <h3 className="text-wrap-balanced mt-1 text-base font-semibold text-white">
+              {item.analysis.originalFileName}
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-white/68">
+              {item.analysis.notes || "No notes added for this video."}
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -170,62 +153,82 @@ const SearchResultCard = ({ item, isLowConfidence = false, resultType = "segment
   }
 
   return (
-    <article className="surface-card overflow-hidden rounded-[28px]">
-      <div className="flex flex-col gap-5 p-5 sm:p-6">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.28em] text-[#8AD8A2]/70">
-              {isFrameResult ? "Matched frame" : "Matched segment"}
-            </p>
-            <h3 className="mt-2 text-lg font-semibold text-white">{item.analysis.originalFileName}</h3>
-            <p className="mt-2 text-sm leading-6 text-white/72">{item.analysis.notes || "No notes added for this video."}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <p
-                className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${getMatchBadgeClasses(matchPresentation.matchBand)}`}
-              >
-                {matchPresentation.matchLabel}
-              </p>
-              {isLowConfidence && (
-                <p className="inline-flex rounded-full bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-100">
-                  Fallback result
-                </p>
-              )}
-            </div>
+    <article className="surface-card group overflow-hidden rounded-[26px] border border-white/8">
+      <div className="relative overflow-hidden bg-black/40">
+        {matchedImageUrl ? (
+          <img
+            src={matchedImageUrl}
+            alt={`Matched frame ${item.matchedFrame?.frameIndex ?? ""}`}
+            className="aspect-video w-full bg-black object-cover transition duration-300 group-hover:scale-[1.02]"
+          />
+        ) : (
+          <div className="flex aspect-video items-center justify-center bg-black text-sm text-white/45">
+            No matched frame preview
           </div>
-          <div className={`grid gap-3 text-sm ${isFrameResult ? "grid-cols-2 sm:min-w-[260px]" : "grid-cols-1 sm:min-w-[180px]"}`}>
-            <div className="rounded-2xl bg-white/5 px-4 py-3">
-              <p className="text-white/55">Softmax prob</p>
-              <p className="mt-1 font-semibold text-[#CFFFD8]">
-                {matchPercentage}%
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-3 text-sm text-white/75">
-          <span className="rounded-full bg-secondary px-3 py-1.5">
-            Uploaded {new Date(item.analysis.createdAt).toLocaleString()}
+        )}
+        <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 p-4">
+          <span className="rounded-full bg-black/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#E8F6E7] backdrop-blur-sm">
+            Matched segment
+          </span>
+          <span
+            className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getMatchBadgeClasses(matchPresentation.matchBand)}`}
+          >
+            {matchPresentation.matchLabel}
           </span>
         </div>
+      </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(220px,0.7fr)_minmax(0,1.3fr)]">
-          <div className="overflow-hidden rounded-[22px] bg-black/30">
-            {matchedImageUrl ? (
-              <img
-                src={matchedImageUrl}
-                alt={`Matched frame ${item.matchedFrame?.frameIndex ?? ""}`}
-                className="aspect-video w-full bg-black object-cover"
-              />
-            ) : (
-              <div className="flex aspect-video items-center justify-center bg-black text-sm text-white/45">
-                No matched frame preview
-            </div>
-          )}
-            <div className="bg-[#08130D] px-4 py-3 text-sm text-white/70">
-              {isFrameResult
-                ? `Frame ${item.matchedFrame?.frameIndex ?? 0} at ${formatTimestamp(previewStartSeconds)}`
-                : `Matched preview at ${formatTimestamp(previewStartSeconds)} within ${formatTimestamp(startSeconds)}-${formatTimestamp(endSeconds)}`}
-            </div>
+        <div className="space-y-3 p-4 sm:p-5">
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-[0.2em] text-[#9ED7A8]/64">Video</p>
+          <h3 className="text-wrap-balanced mt-1 text-base font-semibold text-white">
+            {item.analysis.originalFileName}
+          </h3>
+          <p className="mt-2 text-sm leading-6 text-white/68">
+            {item.analysis.notes || "No notes added for this video."}
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl bg-white/5 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">Preview time</p>
+            <p className="mt-1 text-sm font-semibold text-[#DFFFE2]">
+              {formatTimestamp(previewStartSeconds)}
+            </p>
           </div>
+          <div className="rounded-2xl bg-white/5 px-4 py-3">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">Frame range</p>
+            <p className="mt-1 text-sm font-semibold text-[#DFFFE2]">
+              #{item.matchedInterval?.startFrameIndex ?? 0} - #{item.matchedInterval?.endFrameIndex ?? 0}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white/5 px-4 py-3 sm:col-span-2">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-white/45">Time interval</p>
+            <p className="mt-1 text-sm font-semibold text-[#DFFFE2]">
+              {formatTimestamp(startSeconds)} - {formatTimestamp(endSeconds)}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          {playbackUrl && (
+            <a
+              href={playbackUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="app-button app-button-secondary min-h-0 rounded-2xl px-4 py-2 text-xs uppercase tracking-[0.18em]"
+            >
+              Play Preview
+            </a>
+          )}
+          <span className="rounded-full bg-secondary px-3 py-1.5 text-xs text-white/80">
+            Uploaded {new Date(item.analysis.createdAt).toLocaleString()}
+          </span>
+          {isLowConfidence && (
+            <p className="rounded-full bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber-100">
+              Fallback result
+            </p>
+          )}
         </div>
       </div>
     </article>
@@ -246,10 +249,10 @@ const HistoryVideoCard = ({ item, onDelete, isDeleting = false }) => {
         />
       </div>
       <div className="p-4 sm:p-5">
-        <div className="text-left">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="font-semibold text-[#DFFFE2]">{item.originalFileName}</p>
+          <div className="text-left">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-wrap-balanced font-semibold text-[#DFFFE2]">{item.originalFileName}</p>
               <p className="mt-1 text-sm text-white/70">Created: {new Date(item.createdAt).toLocaleString()}</p>
             </div>
             <span className="rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-[#CFFFD8]">
@@ -263,7 +266,7 @@ const HistoryVideoCard = ({ item, onDelete, isDeleting = false }) => {
             </span>
           </div>
 
-          <p className="mt-4 text-sm text-white/80">Notes: {item.notes || "No notes"}</p>
+          <p className="text-wrap-balanced mt-4 text-sm text-white/80">Notes: {item.notes || "No notes"}</p>
           {item.errorMessage && <p className="mt-2 text-sm text-red-300">{item.errorMessage}</p>}
           <div className="mt-4 flex flex-wrap gap-2">
             <button
@@ -281,147 +284,12 @@ const HistoryVideoCard = ({ item, onDelete, isDeleting = false }) => {
   );
 };
 
-const SearchDebugPanel = ({ debug }) => {
-  if (!debug) {
-    return null;
-  }
-
-  const coarseSoftmaxRow = formatSoftmaxRow(debug.coarseSoftmaxSorted);
-  const frameSoftmaxRow = formatSoftmaxRow(debug.frameSoftmaxSorted);
-  const segmentSoftmaxRow = formatSoftmaxRow(debug.segmentSoftmaxSorted);
-  const searchedPointTypes = Array.isArray(debug.stage2?.searchedPointTypes)
-    ? debug.stage2.searchedPointTypes.join(", ")
-    : "";
-  const queryTypeLabel = String(debug.queryType || debug.pipeline?.mode || "unknown").replaceAll("_", " ");
-  const searchPathLabel = formatSearchPath(debug.searchPath);
-  const coarseLabel = debug.stage1?.pointType === "frame"
-    ? "Stage 1 frame softmax"
-    : "Stage 1 window softmax";
-
-  return (
-    <section className="mt-6 rounded-[22px] bg-secondary p-5 text-left shadow-[0_12px_40px_rgba(0,0,0,0.22)]">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-xs uppercase tracking-[0.26em] text-amber-200/65">Search debug</p>
-          <h3 className="mt-2 text-lg font-semibold text-white">Two-stage retrieval pipeline</h3>
-        </div>
-        <div className="grid grid-cols-2 gap-3 text-sm sm:min-w-[320px]">
-          <div className="rounded-2xl bg-black/15 px-4 py-3">
-            <p className="text-white/55">Stage 1 candidates</p>
-            <p className="mt-1 font-semibold text-amber-100">{debug.coarseMatchCount ?? 0}</p>
-          </div>
-          <div className="rounded-2xl bg-black/15 px-4 py-3">
-            <p className="text-white/55">Candidate videos</p>
-            <p className="mt-1 font-semibold text-amber-100">{debug.stage1?.candidateAnalysisIds?.length ?? 0}</p>
-          </div>
-          <div className="rounded-2xl bg-black/15 px-4 py-3">
-            <p className="text-white/55">Frame matches</p>
-            <p className="mt-1 font-semibold text-amber-100">{debug.frameMatchCount ?? 0}</p>
-          </div>
-          <div className="rounded-2xl bg-black/15 px-4 py-3">
-            <p className="text-white/55">Window matches</p>
-            <p className="mt-1 font-semibold text-amber-100">{debug.windowMatchCount ?? 0}</p>
-          </div>
-          <div className="rounded-2xl bg-black/15 px-4 py-3">
-            <p className="text-white/55">Raw matches</p>
-            <p className="mt-1 font-semibold text-amber-100">{debug.rawMatchCount ?? 0}</p>
-          </div>
-          <div className="rounded-2xl bg-black/15 px-4 py-3">
-            <p className="text-white/55">Returned</p>
-            <p className="mt-1 font-semibold text-amber-100">{debug.returnedCount ?? 0}</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-4 flex flex-wrap gap-3 text-sm text-white/75">
-        <span className="rounded-full bg-[#2A210F] px-3 py-1.5">
-          Query type: {queryTypeLabel}
-        </span>
-        <span className="rounded-full bg-[#2A210F] px-3 py-1.5">
-          Search path: {searchPathLabel}
-        </span>
-        <span className="rounded-full bg-[#2A210F] px-3 py-1.5">
-          Stage 1: {debug.stage1?.pointType || "video"}
-        </span>
-        <span className="rounded-full bg-[#2A210F] px-3 py-1.5">
-          Stage 2: {searchedPointTypes || "none"}
-        </span>
-        <span className="rounded-full bg-[#2A210F] px-3 py-1.5">
-          Top-K {Number(debug.topK ?? 0)}
-        </span>
-        <span className="rounded-full bg-[#2A210F] px-3 py-1.5">
-          Coarse Top-K {Number(debug.coarseTopK ?? 0)}
-        </span>
-        <span className="rounded-full bg-[#2A210F] px-3 py-1.5">
-          Score max {Number(debug.maxScore ?? 0).toFixed(3)}
-        </span>
-        <span className="rounded-full bg-[#2A210F] px-3 py-1.5">
-          Score min {Number(debug.minScore ?? 0).toFixed(3)}
-        </span>
-        <span className="rounded-full bg-[#2A210F] px-3 py-1.5">
-          Abs diff {Number(debug.absoluteScoreSpread ?? 0).toFixed(3)}
-        </span>
-        <span className="rounded-full bg-[#2A210F] px-3 py-1.5">
-          Scale {Number(debug.logitScale ?? 0)}
-        </span>
-      </div>
-
-      <p className="mt-5 text-sm text-white/65">
-        This panel shows how the backend classified the query and whether it searched frames, windows, or used the mixed two-stage path.
-      </p>
-
-      <div className="mt-5 rounded-[20px] bg-black/15 p-4 text-sm text-white/80">
-        <p className="font-semibold text-white">Query classification</p>
-        <p className="mt-2">
-          <span className="text-white/55">Query:</span> {debug.query || "N/A"}
-        </p>
-        <p className="mt-1">
-          <span className="text-white/55">Object tokens:</span>{" "}
-          {debug.pipeline?.objectTokens?.length ? debug.pipeline.objectTokens.join(", ") : "none"}
-        </p>
-        <p className="mt-1">
-          <span className="text-white/55">Action tokens:</span>{" "}
-          {debug.pipeline?.actionTokens?.length ? debug.pipeline.actionTokens.join(", ") : "none"}
-        </p>
-      </div>
-
-      <div className="mt-5 grid gap-4 xl:grid-cols-3">
-        <div className="rounded-[20px] bg-black/15 p-4">
-          <p className="text-sm font-semibold text-white">{coarseLabel}</p>
-          <textarea
-            readOnly
-            value={coarseSoftmaxRow}
-            className="mt-3 min-h-[96px] w-full rounded-2xl border border-white/10 bg-[#08130D] px-4 py-3 font-mono text-xs leading-6 text-[#DFFFE2] outline-none"
-          />
-        </div>
-        <div className="rounded-[20px] bg-black/15 p-4">
-          <p className="text-sm font-semibold text-white">Frame softmax</p>
-          <textarea
-            readOnly
-            value={frameSoftmaxRow}
-            className="mt-3 min-h-[96px] w-full rounded-2xl border border-white/10 bg-[#08130D] px-4 py-3 font-mono text-xs leading-6 text-[#DFFFE2] outline-none"
-          />
-        </div>
-        <div className="rounded-[20px] bg-black/15 p-4">
-          <p className="text-sm font-semibold text-white">Segment softmax</p>
-          <textarea
-            readOnly
-            value={segmentSoftmaxRow}
-            className="mt-3 min-h-[96px] w-full rounded-2xl border border-white/10 bg-[#08130D] px-4 py-3 font-mono text-xs leading-6 text-[#DFFFE2] outline-none"
-          />
-        </div>
-      </div>
-    </section>
-  );
-};
-
 const History = () => {
   const navigate = useNavigate();
   const [history, setHistory] = useState([]);
   const [segmentResults, setSegmentResults] = useState([]);
   const [frameResults, setFrameResults] = useState([]);
   const [previousQueries, setPreviousQueries] = useState([]);
-  const [searchDebug, setSearchDebug] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [searchRunId, setSearchRunId] = useState(0);
@@ -460,7 +328,6 @@ const History = () => {
     currentFramePage * FRAME_RESULTS_PAGE_SIZE,
     frameResults.length,
   );
-  const totalSampledFrames = history.reduce((sum, item) => sum + Number(item.frameCount || 0), 0);
   const totalHistoryPages = Math.max(1, Math.ceil(history.length / VIDEO_HISTORY_PAGE_SIZE));
   const currentHistoryPage = Math.min(historyPage, totalHistoryPages);
   const visibleHistory = history.slice(
@@ -515,7 +382,6 @@ const History = () => {
       setError("Search query is required");
       setSegmentResults([]);
       setFrameResults([]);
-      setSearchDebug(null);
       setHasSearched(true);
       return;
     }
@@ -525,7 +391,6 @@ const History = () => {
     setSegmentResultsPage(1);
     setFrameResults([]);
     setFrameResultsPage(1);
-    setSearchDebug(null);
     setHasSearched(true);
     setIsSearching(true);
     setSearchRunId((current) => current + 1);
@@ -533,7 +398,7 @@ const History = () => {
     try {
       const data = await apiRequest("/api/video/search", {
         method: "POST",
-        body: JSON.stringify({ query: trimmedQuery, includeRawMatches: true }),
+        body: JSON.stringify({ query: trimmedQuery }),
       });
 
       const incomingFrameResults = data.matchedFrames || [];
@@ -556,7 +421,6 @@ const History = () => {
       setFrameResultsPage(1);
       setSegmentResults(incomingSegmentResults);
       setSegmentResultsPage(1);
-      setSearchDebug(data.debug || null);
       showToast(
         `Found ${incomingSegmentResults.length} segment result(s) and ${incomingFrameResults.length} frame result(s).`,
         "success",
@@ -565,7 +429,6 @@ const History = () => {
       setError(err.message || "Search failed");
       setSegmentResults([]);
       setFrameResults([]);
-      setSearchDebug(null);
       showToast(err.message || "Search failed", "error");
     } finally {
       setIsSearching(false);
@@ -634,34 +497,6 @@ const History = () => {
         {isAuthenticated() && (
           <>
             <section className="mt-8 space-y-6 px-1 py-3 sm:px-2">
-              <section className="surface-card overflow-hidden rounded-[32px] border border-white/8">
-                <div className="grid gap-6 px-5 py-6 sm:px-7 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)] lg:px-8 lg:py-8">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-[#9ED7A8]/64">History workspace</p>
-                    <h3 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight text-white sm:text-4xl">
-                      Search past footage without drowning in one long results page
-                    </h3>
-                    <p className="mt-4 max-w-2xl text-sm leading-7 text-white/72 sm:text-[15px]">
-                      This view now gives you a clearer search workspace, stronger result summaries, and matched-frame browsing in batches of five so it is easier to review.
-                    </p>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
-                    <div className="rounded-[24px] border border-[#9ED7A8]/12 bg-[linear-gradient(135deg,rgba(159,214,138,0.22),rgba(10,22,14,0.35))] px-5 py-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-white/50">Stored videos</p>
-                      <p className="mt-2 text-3xl font-semibold text-[#F1FFE9]">{history.length}</p>
-                    </div>
-                    <div className="rounded-[24px] border border-white/8 bg-white/4 px-5 py-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-white/50">Saved queries</p>
-                      <p className="mt-2 text-3xl font-semibold text-[#F1FFE9]">{previousQueries.length}</p>
-                    </div>
-                    <div className="rounded-[24px] border border-white/8 bg-white/4 px-5 py-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-white/50">Sampled frames</p>
-                      <p className="mt-2 text-3xl font-semibold text-[#F1FFE9]">{totalSampledFrames}</p>
-                    </div>
-                  </div>
-                </div>
-              </section>
-
               <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(340px,0.65fr)]">
                 <section className="surface-card rounded-[30px] border border-white/8 p-5 sm:p-6">
                   <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -711,7 +546,7 @@ const History = () => {
 
                   {error && <p className="mt-4 text-sm text-red-300">{error}</p>}
 
-                  <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     <div className="rounded-[22px] border border-white/8 bg-white/4 px-4 py-4">
                       <p className="text-xs uppercase tracking-[0.18em] text-white/45">Frame matches</p>
                       <p className="mt-2 text-2xl font-semibold text-[#F1FFE9]">{frameResults.length}</p>
@@ -741,7 +576,7 @@ const History = () => {
                       </div>
                       <p className="text-xs uppercase tracking-[0.18em] text-white/45">Last {previousQueries.length} searches</p>
                     </div>
-                    <div className="mt-4 space-y-3">
+                    <div className="mt-4 max-h-[420px] space-y-3 overflow-y-auto pr-1">
                       {previousQueries.map((entry) => (
                         <div key={entry.id} className="panel-card rounded-[22px] border border-white/8 p-4">
                           <div>
@@ -772,9 +607,6 @@ const History = () => {
                   </aside>
                 )}
               </div>
-
-              <SearchDebugPanel debug={searchDebug} />
-
               {hasSearched && !isSearching && !error && dedupedGroupedResults.length === 0 && frameResults.length === 0 && (
                 <div className="rounded-[24px] border border-white/10 bg-white/5 px-5 py-5 text-sm text-white/75">
                   No matching segments or frames were returned for this query.
@@ -836,7 +668,7 @@ const History = () => {
                     </div>
                   </div>
 
-                  <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-5">
+                  <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                     {visibleFrameResults.map((item) => (
                       <SearchResultCard
                         key={`${searchRunId}-frame-${item.matchId || `${item.analysis.id}-${item.matchedFrame?.frameIndex}`}`}
@@ -847,6 +679,12 @@ const History = () => {
                     ))}
                   </div>
                 </section>
+              )}
+
+              {hasSearched && !isSearching && !error && frameResults.length === 0 && dedupedGroupedResults.length > 0 && (
+                <div className="rounded-[24px] border border-white/10 bg-white/5 px-5 py-5 text-sm text-white/75">
+                  No frame matches found for this query.
+                </div>
               )}
 
               {dedupedGroupedResults.length > 0 && (
@@ -896,7 +734,7 @@ const History = () => {
                     </div>
                   </div>
 
-                  <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+                  <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
                     {visibleSegmentResults.map((item) => (
                       <SearchResultCard
                         key={`${searchRunId}-${item.matchId || `${item.analysis.id}-${item.matchedInterval?.startFrameIndex}`}`}
@@ -907,6 +745,12 @@ const History = () => {
                     ))}
                   </div>
                 </section>
+              )}
+
+              {hasSearched && !isSearching && !error && dedupedGroupedResults.length === 0 && frameResults.length > 0 && (
+                <div className="rounded-[24px] border border-white/10 bg-white/5 px-5 py-5 text-sm text-white/75">
+                  No segment matches found for this query.
+                </div>
               )}
             </section>
 

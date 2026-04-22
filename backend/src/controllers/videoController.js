@@ -88,9 +88,11 @@ const QUERY_STOPWORDS = new Set([
 ]);
 
 function toHistoryItem(record) {
+  const displayFileName = record.displayFileName || record.originalFileName;
   return {
     id: record._id,
-    originalFileName: record.originalFileName,
+    originalFileName: displayFileName,
+    displayFileName,
     notes: record.notes,
     fileSize: record.fileSize,
     fps: record.fps,
@@ -379,9 +381,13 @@ const videoController = {
       });
     }
 
+    const requestedDisplayName = String(req.body.displayFileName || "").trim();
+    const displayFileName = requestedDisplayName || req.file.originalname;
+
     const analysis = await Analysis.create({
       user: req.user.userId,
       originalFileName: req.file.originalname,
+      displayFileName,
       storedFileName: req.file.filename,
       sharedVideoPath: req.file.path,
       notes: req.body.notes?.trim() || "",
@@ -417,7 +423,7 @@ const videoController = {
             analysisId,
             userId: req.user.userId,
             pointType: "frame",
-            originalFileName: req.file.originalname,
+            originalFileName: displayFileName,
             notes: analysis.notes,
             createdAt: analysis.createdAt.toISOString(),
             frameIndex: sample.frame_index ?? index,
@@ -437,7 +443,7 @@ const videoController = {
             analysisId,
             userId: req.user.userId,
             pointType: "window",
-            originalFileName: req.file.originalname,
+            originalFileName: displayFileName,
             notes: analysis.notes,
             createdAt: analysis.createdAt.toISOString(),
             windowIndex: index,
@@ -465,7 +471,7 @@ const videoController = {
           analysisId,
           userId: req.user.userId,
           pointType: "video",
-          originalFileName: req.file.originalname,
+          originalFileName: displayFileName,
           notes: analysis.notes,
           createdAt: analysis.createdAt.toISOString(),
           frameIndex: 0,

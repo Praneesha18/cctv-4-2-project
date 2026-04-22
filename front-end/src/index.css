@@ -116,6 +116,19 @@ a {
   backdrop-filter: blur(12px);
 }
 
+.text-wrap-balanced {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.nav-shell {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 19, 13, 0.68);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(14px);
+}
+
 .eyebrow {
   color: var(--accent);
   font-size: 0.72rem;
