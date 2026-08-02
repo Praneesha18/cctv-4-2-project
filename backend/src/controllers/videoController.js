@@ -14,11 +14,11 @@ const SEARCH_RAW_LIMIT = Math.max(5, Number(process.env.SEARCH_RAW_LIMIT || 20))
 const SEARCH_LOGIT_SCALE = 100;
 const SEARCH_MODALITY_THRESHOLDS = {
   action: {
-    ignoreBelow: 0.03,
-    rejectBelowTop1: 0.08,
-    acceptTop1: 0.10,
-    minGap: 0.01,
-    minRatio: 1.10,
+    ignoreBelow: 0.02,
+    rejectBelowTop1: 0.05,
+    acceptTop1: 0.06,
+    minGap: 0.005,
+    minRatio: 1.04,
   },
   object: {
     ignoreBelow: 0.02,
@@ -36,21 +36,104 @@ const ACTION_QUERY_TERMS = new Set([
   "movement",
   "moving",
   "motion",
+  "move",
+  "moves",
   "running",
+  "run",
+  "runs",
   "walking",
+  "walk",
+  "walks",
   "jumping",
+  "jump",
+  "jumps",
   "fighting",
+  "fight",
+  "fights",
   "hitting",
+  "hit",
+  "hits",
   "pushing",
+  "push",
+  "pushes",
   "pulling",
+  "pull",
+  "pulls",
   "stealing",
+  "steal",
+  "steals",
   "theft",
   "falling",
+  "fall",
+  "falls",
   "entering",
+  "enter",
+  "enters",
+  "entered",
+  "entry",
   "leaving",
+  "leave",
+  "leaves",
+  "left",
+  "exit",
+  "exits",
+  "exiting",
+  "exited",
   "sitting",
+  "sit",
+  "sits",
   "standing",
+  "stand",
+  "stands",
   "dancing",
+  "dance",
+  "dances",
+  "arrive",
+  "arrives",
+  "arriving",
+  "approach",
+  "approaches",
+  "approaching",
+  "chase",
+  "chases",
+  "chasing",
+  "grab",
+  "grabs",
+  "grabbing",
+  "pickup",
+  "pick",
+  "picks",
+  "picking",
+  "drop",
+  "drops",
+  "dropping",
+  "open",
+  "opens",
+  "opening",
+  "close",
+  "closes",
+  "closing",
+  "carry",
+  "carries",
+  "carrying",
+  "drive",
+  "drives",
+  "driving",
+  "ride",
+  "rides",
+  "riding",
+  "talk",
+  "talks",
+  "talking",
+  "meet",
+  "meets",
+  "meeting",
+  "follow",
+  "follows",
+  "following",
+  "cross",
+  "crosses",
+  "crossing",
 ]);
 const QUERY_STOPWORDS = new Set([
   "a",
@@ -217,15 +300,65 @@ function addSoftmaxProbabilities(results) {
   }));
 }
 
+function looksLikeActionToken(token) {
+  if (!token || QUERY_STOPWORDS.has(token) || /^\d+$/.test(token)) {
+    return false;
+  }
+
+  if (ACTION_QUERY_TERMS.has(token)) {
+    return true;
+  }
+
+  return (
+    token.endsWith("ing")
+    || token.endsWith("ed")
+    || token.endsWith("es")
+  );
+}
+
+function intervalOverlapRatio(left, right) {
+  if (!left || !right) {
+    return 0;
+  }
+
+  const leftStart = Number(left.startSeconds ?? 0);
+  const leftEnd = Number(left.endSeconds ?? leftStart);
+  const rightStart = Number(right.startSeconds ?? 0);
+  const rightEnd = Number(right.endSeconds ?? rightStart);
+
+  const overlap = Math.max(0, Math.min(leftEnd, rightEnd) - Math.max(leftStart, rightStart));
+  const leftDuration = Math.max(0.001, leftEnd - leftStart);
+  const rightDuration = Math.max(0.001, rightEnd - rightStart);
+
+  return overlap / Math.min(leftDuration, rightDuration);
+}
+
+function dedupeOverlappingWindowResults(results, maxOverlapRatio = 0.75) {
+  const deduped = [];
+
+  for (const item of results) {
+    const isNearDuplicate = deduped.some((existing) => (
+      existing.analysis?.id?.toString() === item.analysis?.id?.toString()
+      && intervalOverlapRatio(existing.matchedInterval, item.matchedInterval) >= maxOverlapRatio
+    ));
+
+    if (!isNearDuplicate) {
+      deduped.push(item);
+    }
+  }
+
+  return deduped;
+}
+
 function classifyQueryPipeline(query) {
   const tokens = String(query || "")
     .toLowerCase()
     .split(/[^a-z0-9]+/g)
     .filter(Boolean);
 
-  const actionTokens = tokens.filter((token) => ACTION_QUERY_TERMS.has(token));
+  const actionTokens = tokens.filter((token) => looksLikeActionToken(token));
   const objectTokens = tokens.filter(
-    (token) => !ACTION_QUERY_TERMS.has(token) && !QUERY_STOPWORDS.has(token),
+    (token) => !looksLikeActionToken(token) && !QUERY_STOPWORDS.has(token),
   );
 
   const hasActionTerms = actionTokens.length > 0;
@@ -332,6 +465,26 @@ function filterAcceptedResults(results, decision) {
   }
 
   return results;
+}
+
+function mergeUniqueMatches(primaryMatches, fallbackMatches, limit) {
+  const merged = [];
+  const seen = new Set();
+
+  for (const match of [...primaryMatches, ...fallbackMatches]) {
+    if (!match?.id || seen.has(match.id)) {
+      continue;
+    }
+
+    seen.add(match.id);
+    merged.push(match);
+
+    if (merged.length >= limit) {
+      break;
+    }
+  }
+
+  return merged;
 }
 
 function uniqueAnalysisIds(matches) {
@@ -677,6 +830,17 @@ const videoController = {
               analysisIds: candidateAnalysisIds,
             })
           : [];
+
+        if (windowMatches.length < Math.min(5, limit)) {
+          const globalWindowMatches = await searchPoints(
+            vector,
+            req.user.userId,
+            limit,
+            "window",
+          );
+          windowMatches = mergeUniqueMatches(windowMatches, globalWindowMatches, limit);
+          candidateAnalysisIds = uniqueAnalysisIds([...frameMatches, ...windowMatches]);
+        }
       } else if (isActionOnly) {
         windowMatches = await searchPoints(vector, req.user.userId, limit, "window");
         candidateAnalysisIds = uniqueAnalysisIds(windowMatches);
@@ -702,7 +866,8 @@ const videoController = {
       const recordMap = new Map(records.map((record) => [record._id.toString(), record]));
       const coarseResults = addSoftmaxProbabilities(
         attachConfidenceMargins(
-          windowMatches
+          dedupeOverlappingWindowResults(
+            windowMatches
             .map((match) => {
               const analysisId = match.payload?.analysisId;
               const record = analysisId ? recordMap.get(analysisId) : null;
@@ -715,6 +880,7 @@ const videoController = {
             .filter(Boolean)
             .sort((left, right) => Number(right.score || 0) - Number(left.score || 0))
             .slice(0, coarseLimit),
+          ),
         ),
       );
       const frameResults = addSoftmaxProbabilities(
@@ -736,7 +902,8 @@ const videoController = {
       );
       const segmentResults = addSoftmaxProbabilities(
         attachConfidenceMargins(
-          windowMatches
+          dedupeOverlappingWindowResults(
+            windowMatches
             .map((match) => {
               const analysisId = match.payload?.analysisId;
               const record = analysisId ? recordMap.get(analysisId) : null;
@@ -749,6 +916,7 @@ const videoController = {
             .filter(Boolean)
             .sort((left, right) => Number(right.score || 0) - Number(left.score || 0))
             .slice(0, limit),
+          ),
         ),
       );
 
